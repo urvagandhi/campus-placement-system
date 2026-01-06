@@ -10,6 +10,8 @@ This project provides a complete skeleton for a campus placement management syst
 - **Next.js Frontend** - Modern React-based UI with role-based dashboards
 
 > **Note:** The AI module acts strictly as a decision-support system and does not autonomously make placement decisions.
+>
+> **Disclaimer:** In the current frontend-only phase, user roles are mocked for UI demonstration. In the final system, roles are determined by backend authentication and not selected by users.
 
 ## 🏗️ Architecture
 

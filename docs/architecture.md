@@ -133,6 +133,31 @@ The AI-Assisted Campus Placement System follows a **Modular Monolithic** archite
 - **RBAC**: Four roles with hierarchical permissions
 - **AI Service**: Internal-only (not exposed to frontend)
 
+## Role Authorization Model
+
+Roles are used to enforce authorization, responsibility boundaries, and data ownership.
+Operational authority is centralized with the Placement Coordinator, while departments
+contribute academic constraints as data rather than decision-making roles.
+
+| Role | Authority | Cannot Do |
+|------|-----------|-----------|
+| STUDENT | View drives, apply, track status | Manage users, create drives |
+| COORDINATOR | Create drives, shortlist students | Register colleges, system settings |
+| ADMIN | Manage users, departments, calendar | Modify placement decisions |
+| SUPER_ADMIN | Platform governance, college registration | Interfere in college operations |
+
+## Department Coordination Design
+
+> Departments interact with the placement process by providing academic schedules
+> and constraints. However, no Department Admin role is introduced to avoid
+> unnecessary system complexity.
+
+### How It Works
+- Admin maintains academic calendar per department
+- Coordinator sees conflict warnings when scheduling drives
+- Department influence is **informational only**
+- Final placement decisions rest with the Coordinator
+
 ## Scalability Considerations
 
 - Modular design allows independent scaling

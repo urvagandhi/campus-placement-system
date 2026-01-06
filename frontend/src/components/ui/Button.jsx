@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Reusable Button component
+ * Reusable Button component with glassmorphism support
  */
 export default function Button({
     children,
@@ -14,21 +14,23 @@ export default function Button({
     className = '',
     ...props
 }) {
-    const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+    const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
 
     const variants = {
-        primary: 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 shadow-sm',
-        secondary: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-indigo-500 shadow-sm',
-        danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm',
-        success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-green-500 shadow-sm',
-        outline: 'border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 focus:ring-indigo-500',
-        ghost: 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:ring-gray-500',
+        primary: 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white hover:from-indigo-700 hover:to-indigo-800 focus-visible:ring-indigo-500 shadow-lg shadow-indigo-500/25 btn-glow',
+        secondary: 'glass text-gray-700 hover:bg-white/90 focus-visible:ring-indigo-500',
+        outline: 'border-2 border-indigo-500 text-indigo-600 hover:bg-indigo-50 focus-visible:ring-indigo-500 bg-white/50 backdrop-blur-sm',
+        danger: 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 focus-visible:ring-red-500 shadow-lg shadow-red-500/25',
+        success: 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 focus-visible:ring-emerald-500 shadow-lg shadow-emerald-500/25',
+        ghost: 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80 focus-visible:ring-gray-500',
+        glass: 'glass text-indigo-700 hover:bg-white/90 focus-visible:ring-indigo-500 border-indigo-200/50',
     };
 
     const sizes = {
-        sm: 'px-3 py-1.5 text-sm',
-        md: 'px-4 py-2 text-base',
-        lg: 'px-6 py-3 text-lg',
+        sm: 'px-3.5 py-1.5 text-sm gap-1.5',
+        md: 'px-5 py-2.5 text-sm gap-2',
+        lg: 'px-6 py-3 text-base gap-2',
+        xl: 'px-8 py-4 text-lg gap-2.5',
     };
 
     const disabledStyles = disabled || loading

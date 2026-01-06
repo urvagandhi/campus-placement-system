@@ -1,8 +1,9 @@
 'use client';
 
+import { X } from 'lucide-react';
 
 /**
- * Reusable Modal component
+ * Reusable Modal component with glassmorphism
  */
 export default function Modal({
     isOpen,
@@ -19,35 +20,34 @@ export default function Modal({
         md: 'max-w-lg',
         lg: 'max-w-2xl',
         xl: 'max-w-4xl',
+        full: 'max-w-6xl',
     };
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto">
-            {/* Backdrop */}
+            {/* Backdrop with blur */}
             <div
-                className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+                className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"
                 onClick={onClose}
             />
 
             {/* Modal */}
             <div className="flex min-h-full items-center justify-center p-4">
                 <div
-                    className={`relative bg-white rounded-xl shadow-xl w-full ${sizes[size]} transform transition-all`}
+                    className={`relative glass-card w-full ${sizes[size]} transform transition-all duration-300 animate-in fade-in zoom-in-95`}
                 >
                     {/* Header */}
                     {(title || showCloseButton) && (
-                        <div className="flex items-center justify-between px-6 py-4 border-b">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100/50">
                             {title && (
                                 <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
                             )}
                             {showCloseButton && (
                                 <button
                                     onClick={onClose}
-                                    className="text-gray-400 hover:text-gray-600"
+                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100/80 rounded-lg transition-colors"
                                 >
-                                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
+                                    <X className="h-5 w-5" />
                                 </button>
                             )}
                         </div>

@@ -7,19 +7,14 @@ import SuperAdminSidebar from './SuperAdminSidebar';
 export default function SuperAdminLayout({ children }) {
     return (
         <SuperAdminRouteGuard>
-            <div className="min-h-screen bg-gray-50 flex">
-                {/* Sidebar */}
+            <div className="min-h-screen bg-gray-50">
+                <SuperAdminNavbar />
                 <SuperAdminSidebar />
-
-                {/* Main Content Area */}
-                <div className="flex-1 flex flex-col ml-64 transition-all duration-300">
-                    <SuperAdminNavbar />
-                    <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-                        <div className="max-w-7xl mx-auto w-full">
-                            {children}
-                        </div>
-                    </main>
-                </div>
+                <main className="pt-24 md:pl-64 min-h-screen transition-all duration-200">
+                    <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+                        {children}
+                    </div>
+                </main>
             </div>
         </SuperAdminRouteGuard>
     );

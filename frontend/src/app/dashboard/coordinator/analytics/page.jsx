@@ -39,36 +39,51 @@ export default function AnalyticsPage() {
                 <>
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <Card className="bg-indigo-600 text-white border-none">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-white/20 rounded-lg">
-                                    <Users className="h-6 w-6 text-white" />
-                                </div>
+                        {/* Total Placed */}
+                        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-6">
+                            <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-indigo-100 text-sm font-medium">Total Placed</p>
-                                    <h3 className="text-3xl font-bold">148</h3>
+                                    <p className="text-gray-500 text-sm font-medium mb-1">Total Placed</p>
+                                    <h3 className="text-3xl font-bold text-gray-900">148</h3>
+                                    <p className="text-xs text-green-600 flex items-center mt-1">
+                                        {/* <TrendingUp className="h-3 w-3 mr-1" /> +12% from last year */}
+                                    </p>
+                                </div>
+                                <div className="h-12 w-12 bg-indigo-50 rounded-full flex items-center justify-center">
+                                    <Users className="h-6 w-6 text-indigo-600" />
                                 </div>
                             </div>
                         </Card>
-                        <Card>
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-green-100 rounded-lg">
-                                    <TrendingUp className="h-6 w-6 text-green-600" />
-                                </div>
+
+                        {/* Placement Rate */}
+                        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-6">
+                            <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-gray-500 text-sm font-medium">Placement Rate</p>
+                                    <p className="text-gray-500 text-sm font-medium mb-1">Placement Rate</p>
                                     <h3 className="text-3xl font-bold text-gray-900">65%</h3>
+                                    <p className="text-xs text-green-600 flex items-center mt-1">
+                                        {/* <TrendingUp className="h-3 w-3 mr-1" /> +5% growth */}
+                                    </p>
+                                </div>
+                                <div className="h-12 w-12 bg-green-50 rounded-full flex items-center justify-center">
+                                    <Award className="h-6 w-6 text-green-600" />
                                 </div>
                             </div>
                         </Card>
-                        <Card>
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-orange-100 rounded-lg">
-                                    <Award className="h-6 w-6 text-orange-600" />
-                                </div>
+
+                        {/* Highest Package */}
+                        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-6">
+                            <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-gray-500 text-sm font-medium">Highest Package</p>
-                                    <h3 className="text-3xl font-bold text-gray-900">22 LPA</h3>
+                                    <p className="text-gray-500 text-sm font-medium mb-1">Highest Package</p>
+                                    <div className="flex items-baseline gap-1">
+                                        <h3 className="text-3xl font-bold text-gray-900">22</h3>
+                                        <span className="text-lg font-semibold text-gray-500">LPA</span>
+                                    </div>
+                                    <p className="text-xs text-gray-400 mt-1">Offered by Google</p>
+                                </div>
+                                <div className="h-12 w-12 bg-orange-50 rounded-full flex items-center justify-center">
+                                    <Award className="h-6 w-6 text-orange-600" />
                                 </div>
                             </div>
                         </Card>

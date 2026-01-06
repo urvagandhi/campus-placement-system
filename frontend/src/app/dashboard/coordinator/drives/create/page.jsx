@@ -5,10 +5,18 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
-import { ArrowLeft, Plus, X } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+// Mock Academic Calendar Data for Conflict Detection
+const ACADEMIC_CALENDAR = [
+    { department: 'Computer Science and Engineering', event: 'End Semester Exams', startDate: '2023-11-20', endDate: '2023-11-30' },
+    { department: 'Information Technology', event: 'Practical Exams', startDate: '2023-11-15', endDate: '2023-11-18' },
+    { department: 'Mechanical Engineering', event: 'Industrial Visit', startDate: '2023-11-25', endDate: '2023-11-26' },
+    { department: 'Electronics and Communication', event: 'Project Reviews', startDate: '2023-11-22', endDate: '2023-11-24' }
+];
 
 const DEPARTMENTS = [
     'Computer Science and Engineering',
@@ -33,8 +41,46 @@ export default function CreateDrivePage() {
         date: '',
         deadline: '',
         departments: [],
-        skills: []
+        skills: [],
+        remarks: '' // Department constraints/remarks
     });
+
+    // Conflict State
+    const [academicConflicts, setAcademicConflicts] = useState([]);
+
+    // Check for conflicts whenever date or departments change
+    useEffect(() => {
+        checkAcademicConflicts();
+    }, [formData.date, formData.departments]);
+
+    const checkAcademicConflicts = () => {
+        if (!formData.date || formData.departments.length === 0) {
+            setAcademicConflicts([]);
+            return;
+        }
+
+        const driveDate = new Date(formData.date);
+        const conflicts = [];
+
+        formData.departments.forEach(dept => {
+            const deptEvents = ACADEMIC_CALENDAR.filter(e => e.department === dept);
+            deptEvents.forEach(event => {
+                const start = new Date(event.startDate);
+                const end = new Date(event.endDate);
+
+                // Check if drive date falls within event range (inclusive)
+                if (driveDate >= start && driveDate <= end) {
+                    conflicts.push({
+                        department: dept,
+                        event: event.event,
+                        dateRange: `${event.startDate} to ${event.endDate}`
+                    });
+                }
+            });
+        });
+
+        setAcademicConflicts(conflicts);
+    };
 
     const [skillInput, setSkillInput] = useState('');
 
@@ -182,8 +228,8 @@ export default function CreateDrivePage() {
                                         key={dept}
                                         onClick={() => toggleDepartment(dept)}
                                         className={`px-3 py-1.5 rounded-full text-sm cursor-pointer border transition-all select-none ${formData.departments.includes(dept)
-                                                ? 'bg-indigo-600 text-white border-indigo-600'
-                                                : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+                                            ? 'bg-indigo-600 text-white border-indigo-600'
+                                            : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
                                             }`}
                                     >
                                         {dept}
@@ -195,6 +241,31 @@ export default function CreateDrivePage() {
                             )}
                         </div>
                     </div>
+
+                    {/* Academic Conflict Warning */}
+                    {academicConflicts.length > 0 && (
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 animate-fade-in">
+                            <div className="flex items-start gap-3">
+                                <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+                                <div>
+                                    <h4 className="text-sm font-semibold text-amber-900">Academic Schedule Conflict Detected</h4>
+                                    <p className="text-sm text-amber-700 mt-1">
+                                        The selected date conflicts with the following department schedules.
+                                        This is informational; you may proceed if approved by updates.
+                                    </p>
+                                    <ul className="mt-3 space-y-1">
+                                        {academicConflicts.map((conflict, idx) => (
+                                            <li key={idx} className="text-xs font-medium text-amber-800 flex items-center gap-2">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                {conflict.department}: {conflict.event} ({conflict.dateRange})
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
 
                     {/* Skills & Description */}
                     <div className="space-y-4">
@@ -230,8 +301,21 @@ export default function CreateDrivePage() {
                                 value={formData.description}
                                 onChange={handleChange}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all resize-none"
-                                placeholder="Enter role responsibilities and other details..."
-                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Department Constraints / Remarks
+                                <span className="ml-2 text-xs text-gray-400 font-normal">(Optional)</span>
+                            </label>
+                            <textarea
+                                name="remarks"
+                                rows="2"
+                                value={formData.remarks}
+                                onChange={handleChange}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all resize-none"
+                                placeholder="Note any specific department constraints or arrangements..."
                             />
                         </div>
                     </div>
@@ -269,6 +353,6 @@ export default function CreateDrivePage() {
                     </Button>
                 </div>
             </Modal>
-        </div>
+        </div >
     );
 }

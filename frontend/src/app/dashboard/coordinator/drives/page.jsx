@@ -4,7 +4,7 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
-import { Edit2, Filter, Plus, Search } from 'lucide-react';
+import { AlertTriangle, Edit2, Filter, Plus, Search, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -18,7 +18,10 @@ const MOCK_DRIVES = [
         applicants: 45,
         status: 'Active',
         location: 'Bangalore',
-        pkg: '14-20 LPA'
+        status: 'Active',
+        location: 'Bangalore',
+        pkg: '14-20 LPA',
+        hasConflict: true // Mock conflict
     },
     {
         id: 2,
@@ -103,8 +106,8 @@ export default function ManageDrivesPage() {
                                 key={f}
                                 onClick={() => setFilter(f)}
                                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filter === f
-                                        ? 'bg-white text-gray-900 shadow-sm'
-                                        : 'text-gray-500 hover:text-gray-900'
+                                    ? 'bg-white text-gray-900 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-900'
                                     }`}
                             >
                                 {f}
@@ -141,7 +144,16 @@ export default function ManageDrivesPage() {
                                                 <div className="font-medium text-gray-900">{drive.company}</div>
                                                 <div className="text-sm text-gray-500">{drive.role}</div>
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-gray-600">{drive.date}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-600">
+                                                <div className="flex items-center gap-2">
+                                                    {drive.date}
+                                                    {drive.hasConflict && (
+                                                        <div className="text-amber-500" title="Academic Schedule Conflict Detected">
+                                                            <AlertTriangle className="h-4 w-4" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
                                             <td className="px-4 py-3 text-sm text-gray-600">{drive.pkg}</td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2">
