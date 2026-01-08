@@ -17,23 +17,27 @@ DO $$ BEGIN
     END IF;
 END $$;;
 
+-- NOTE: Migration from varchar to enum removed.
+-- If you have an existing database with varchar role column, run this manually:
+-- ALTER TABLE users ALTER COLUMN role TYPE user_role USING role::user_role;
 -- 2. Safe Migration of Users Role Column (Text -> Enum)
-DO $$
-BEGIN
-    -- Only run if the column is currently character varying (text)
-    IF EXISTS (
-        SELECT 1
-        FROM information_schema.columns
-        WHERE table_name = 'users'
-          AND column_name = 'role'
-          AND data_type = 'character varying'
-    ) THEN
-        -- Explicitly cast the column
-        ALTER TABLE users
-        ALTER COLUMN role TYPE user_role
-        USING role::user_role;
-    END IF;
-END $$;;
+-- DO $$
+-- BEGIN
+--     -- Only run if the column is currently character varying (text)
+--     IF EXISTS (
+--         SELECT 1
+--         FROM information_schema.columns
+--         WHERE table_name = 'users'
+--           AND column_name = 'role'
+--           AND data_type = 'character varying'
+--     ) THEN
+--         -- Explicitly cast the column
+--         ALTER TABLE users
+--         ALTER COLUMN role TYPE user_role
+--         USING role::user_role;
+--     END IF;
+-- END $$;;
+
 
 -- 3. Create Tables (IF NOT EXISTS)
 

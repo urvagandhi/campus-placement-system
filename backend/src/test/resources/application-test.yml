@@ -1,0 +1,35 @@
+# Test Configuration for Campus Placement System
+# Uses Testcontainers for PostgreSQL integration tests
+
+spring:
+  application:
+    name: campus-placement-system-test
+
+  # JPA Configuration for tests
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # SQL initialization disabled for tests - Hibernate handles schema
+  sql:
+    init:
+      mode: never
+
+# JWT Configuration for tests
+app:
+  jwt:
+    secret: TestSecretKeyForJWTTokenGenerationMinimum256BitsLongEnoughForHMACSHA256
+    expiration-ms: 3600000  # 1 hour for faster test cycles
+
+# Logging - minimal for tests
+logging:
+  level:
+    root: WARN
+    com.campusplacement: INFO
+    org.testcontainers: INFO
+    org.springframework.security: WARN

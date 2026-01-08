@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -234,5 +235,166 @@ class AuthServiceTest {
                 // Assert
                 assertEquals("/dashboard/coordinator", response.getRedirectUrl());
                 assertEquals("COORDINATOR", response.getRole());
+        }
+
+        @Test
+        @DisplayName("Admin login redirects to admin dashboard")
+        void testAdminLogin_ReturnsCorrectRedirectUrl() {
+                // Arrange
+                testUser.setRole(UserRole.ADMIN);
+                when(userRepository.findByEmailWithCollege("student@test.edu"))
+                                .thenReturn(Optional.of(testUser));
+                when(passwordEncoder.matches("password123", testUser.getPasswordHash()))
+                                .thenReturn(true);
+                when(jwtTokenProvider.generateToken(testUser))
+                                .thenReturn("jwt-token-here");
+
+                // Act
+                LoginResponseDTO response = authService.login(loginRequest);
+
+                // Assert
+                assertEquals("/dashboard/admin", response.getRedirectUrl());
+                assertEquals("ADMIN", response.getRole());
+        }
+
+        @Test
+        @DisplayName("Successful login updates lastLogin timestamp")
+        void testLoginSuccess_UpdatesLastLogin() {
+                // Arrange
+                assertNull(testUser.getLastLogin()); // Verify no prior login
+                when(userRepository.findByEmailWithCollege("student@test.edu"))
+                                .thenReturn(Optional.of(testUser));
+                when(passwordEncoder.matches("password123", testUser.getPasswordHash()))
+                                .thenReturn(true);
+                when(jwtTokenProvider.generateToken(testUser))
+                                .thenReturn("jwt-token-here");
+
+                // Act
+                authService.login(loginRequest);
+
+                // Assert
+                assertNotNull(testUser.getLastLogin());
+                verify(userRepository).save(testUser);
+        }
+
+        @Test
+        @DisplayName("Successful login creates audit with success=true")
+        void testLoginSuccess_CreatesSuccessAudit() {
+                // Arrange
+                when(userRepository.findByEmailWithCollege("student@test.edu"))
+                                .thenReturn(Optional.of(testUser));
+                when(passwordEncoder.matches("password123", testUser.getPasswordHash()))
+                                .thenReturn(true);
+                when(jwtTokenProvider.generateToken(testUser))
+                                .thenReturn("jwt-token-here");
+
+                // Act
+                authService.login(loginRequest);
+
+                // Assert - verify audit was saved with success=true
+                verify(loginAuditRepository).save(argThat(audit -> audit.getSuccess() &&
+                                audit.getUserId().equals(testUser.getId()) &&
+                                audit.getEmail().equals("student@test.edu")));
+        }
+
+        @Test
+        @DisplayName("Failed login with wrong password creates audit with success=false")
+        void testLoginFailure_WrongPassword_CreatesFailureAudit() {
+                // Arrange
+                when(userRepository.findByEmailWithCollege("student@test.edu"))
+                                .thenReturn(Optional.of(testUser));
+                when(passwordEncoder.matches("wrongpassword", testUser.getPasswordHash()))
+                                .thenReturn(false);
+
+                loginRequest.setPassword("wrongpassword");
+
+                // Act & Assert
+                assertThrows(AuthenticationException.class, () -> authService.login(loginRequest));
+
+                // Verify audit was saved with success=false and correct userId
+                verify(loginAuditRepository).save(argThat(audit -> !audit.getSuccess() &&
+                                audit.getUserId().equals(testUser.getId()) &&
+                                audit.getEmail().equals("student@test.edu")));
+        }
+
+        @Test
+        @DisplayName("Failed login with unknown email creates audit with null userId")
+        void testLoginFailure_UnknownEmail_CreatesAuditWithNullUserId() {
+                // Arrange
+                when(userRepository.findByEmailWithCollege("unknown@test.edu"))
+                                .thenReturn(Optional.empty());
+
+                loginRequest.setEmail("unknown@test.edu");
+
+                // Act & Assert
+                assertThrows(AuthenticationException.class, () -> authService.login(loginRequest));
+
+                // Verify audit was saved with null userId (unknown user)
+                verify(loginAuditRepository).save(argThat(audit -> !audit.getSuccess() &&
+                                audit.getUserId() == null &&
+                                audit.getEmail().equals("unknown@test.edu")));
+        }
+
+        @Test
+        @DisplayName("Login with null isActive throws AccountDeactivatedException")
+        void testLoginWithNullIsActive_ThrowsAccountDeactivatedException() {
+                // Arrange
+                testUser.setIsActive(null);
+                when(userRepository.findByEmailWithCollege("student@test.edu"))
+                                .thenReturn(Optional.of(testUser));
+                when(passwordEncoder.matches("password123", testUser.getPasswordHash()))
+                                .thenReturn(true);
+
+                // Act & Assert
+                assertThrows(AccountDeactivatedException.class, () -> authService.login(loginRequest));
+        }
+
+        @Test
+        @DisplayName("Login normalizes email to lowercase and trims whitespace")
+        void testLogin_EmailNormalization_TrimsAndLowercases() {
+                // Arrange
+                loginRequest.setEmail("  STUDENT@TEST.EDU  ");
+                when(userRepository.findByEmailWithCollege("student@test.edu"))
+                                .thenReturn(Optional.of(testUser));
+                when(passwordEncoder.matches("password123", testUser.getPasswordHash()))
+                                .thenReturn(true);
+                when(jwtTokenProvider.generateToken(testUser))
+                                .thenReturn("jwt-token-here");
+
+                // Act
+                LoginResponseDTO response = authService.login(loginRequest);
+
+                // Assert - verify the normalized email was used for lookup
+                verify(userRepository).findByEmailWithCollege("student@test.edu");
+                assertNotNull(response.getToken());
+        }
+
+        @Test
+        @DisplayName("Login with inactive college isActive null throws CollegeInactiveException")
+        void testLoginWithNullCollegeIsActive_ThrowsCollegeInactiveException() {
+                // Arrange
+                testCollege.setIsActive(null);
+                when(userRepository.findByEmailWithCollege("student@test.edu"))
+                                .thenReturn(Optional.of(testUser));
+                when(passwordEncoder.matches("password123", testUser.getPasswordHash()))
+                                .thenReturn(true);
+
+                // Act & Assert
+                assertThrows(CollegeInactiveException.class, () -> authService.login(loginRequest));
+        }
+
+        @Test
+        @DisplayName("Non-SUPER_ADMIN without college throws CollegeInactiveException")
+        void testLoginNonSuperAdminWithoutCollege_ThrowsCollegeInactiveException() {
+                // Arrange
+                testUser.setCollege(null); // User without college
+                testUser.setRole(UserRole.STUDENT); // Not SUPER_ADMIN
+                when(userRepository.findByEmailWithCollege("student@test.edu"))
+                                .thenReturn(Optional.of(testUser));
+                when(passwordEncoder.matches("password123", testUser.getPasswordHash()))
+                                .thenReturn(true);
+
+                // Act & Assert
+                assertThrows(CollegeInactiveException.class, () -> authService.login(loginRequest));
         }
 }

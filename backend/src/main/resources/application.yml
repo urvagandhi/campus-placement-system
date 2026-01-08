@@ -4,6 +4,8 @@
 spring:
   application:
     name: campus-placement-system
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   config:
     import: optional:file:.env[.properties]
 

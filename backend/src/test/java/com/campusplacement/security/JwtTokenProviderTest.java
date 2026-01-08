@@ -117,4 +117,103 @@ class JwtTokenProviderTest {
         String token = jwtTokenProvider.generateToken(testUser);
         assertEquals(UserRole.COORDINATOR, jwtTokenProvider.getRoleFromToken(token));
     }
+
+    @Test
+    @DisplayName("Generate token contains version claim")
+    void testGenerateToken_ContainsVersionClaim() {
+        String token = jwtTokenProvider.generateToken(testUser);
+        Integer version = jwtTokenProvider.getTokenVersion(token);
+
+        assertNotNull(version);
+        assertEquals(1, version.intValue());
+    }
+
+    @Test
+    @DisplayName("Get current token version returns 1")
+    void testGetCurrentTokenVersion_Returns1() {
+        assertEquals(1, jwtTokenProvider.getCurrentTokenVersion());
+    }
+
+    @Test
+    @DisplayName("Get expiration returns configured value")
+    void testGetExpirationMs_ReturnsConfiguredValue() {
+        assertEquals(86400000L, jwtTokenProvider.getExpirationMs());
+    }
+
+    @Test
+    @DisplayName("Validate expired token returns false")
+    void testValidateToken_ExpiredToken_ReturnsFalse() {
+        // Create a provider with very short expiration
+        JwtTokenProvider shortLivedProvider = new JwtTokenProvider();
+        ReflectionTestUtils.setField(shortLivedProvider, "jwtSecret",
+                "ThisIsAVerySecureSecretKeyForJWTTokenGenerationMinimum256BitsLong");
+        ReflectionTestUtils.setField(shortLivedProvider, "jwtExpirationMs", 1L); // 1ms expiration
+
+        String token = shortLivedProvider.generateToken(testUser);
+
+        // Wait for token to expire
+        try {
+            Thread.sleep(50); // Wait 50ms to ensure expiration
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        assertFalse(shortLivedProvider.validateToken(token));
+    }
+
+    @Test
+    @DisplayName("Get org unit ID from token when present")
+    void testGetOrgUnitIdFromToken_WhenPresent() {
+        Long orgUnitId = 42L;
+        String token = jwtTokenProvider.generateToken(testUser, orgUnitId);
+
+        assertEquals(orgUnitId, jwtTokenProvider.getOrgUnitIdFromToken(token));
+    }
+
+    @Test
+    @DisplayName("Get org unit ID from token when absent returns null")
+    void testGetOrgUnitIdFromToken_WhenAbsent_ReturnsNull() {
+        String token = jwtTokenProvider.generateToken(testUser);
+
+        assertNull(jwtTokenProvider.getOrgUnitIdFromToken(token));
+    }
+
+    @Test
+    @DisplayName("Generate token with org unit includes oid claim")
+    void testGenerateTokenWithOrgUnit_IncludesOidClaim() {
+        Long orgUnitId = 100L;
+        String token = jwtTokenProvider.generateToken(testUser, orgUnitId);
+
+        // Verify all claims are present
+        assertEquals("test@college.edu", jwtTokenProvider.getEmailFromToken(token));
+        assertEquals(10L, jwtTokenProvider.getUserIdFromToken(token));
+        assertEquals(5L, jwtTokenProvider.getCollegeIdFromToken(token));
+        assertEquals(100L, jwtTokenProvider.getOrgUnitIdFromToken(token));
+    }
+
+    @Test
+    @DisplayName("Validate empty token returns false")
+    void testValidateToken_EmptyToken_ReturnsFalse() {
+        assertFalse(jwtTokenProvider.validateToken(""));
+    }
+
+    @Test
+    @DisplayName("Validate null-like token returns false")
+    void testValidateToken_MalformedToken_ReturnsFalse() {
+        assertFalse(jwtTokenProvider.validateToken("not.a.jwt.token.at.all"));
+    }
+
+    @Test
+    @DisplayName("Get email from token returns correct email")
+    void testGetEmailFromToken_ReturnsCorrectEmail() {
+        String token = jwtTokenProvider.generateToken(testUser);
+        assertEquals("test@college.edu", jwtTokenProvider.getEmailFromToken(token));
+    }
+
+    @Test
+    @DisplayName("Get college ID from token returns correct ID")
+    void testGetCollegeIdFromToken_ReturnsCorrectId() {
+        String token = jwtTokenProvider.generateToken(testUser);
+        assertEquals(5L, jwtTokenProvider.getCollegeIdFromToken(token));
+    }
 }

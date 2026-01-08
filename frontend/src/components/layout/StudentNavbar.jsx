@@ -1,16 +1,14 @@
 'use client';
 
 import Logo from '@/components/ui/Logo';
+import { useAuth } from '@/hooks/useAuth';
 import { Bell, ChevronDown, LogOut } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 export default function StudentNavbar() {
-    const router = useRouter();
+    const { logout, user } = useAuth();
 
-    const handleLogout = () => {
-        // Mock logout
-        localStorage.removeItem('userRole');
-        router.push('/login');
+    const handleLogout = async () => {
+        await logout();
     };
 
     return (
