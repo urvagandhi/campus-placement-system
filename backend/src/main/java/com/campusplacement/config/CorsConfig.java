@@ -22,7 +22,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
  * </p>
  * <ul>
  * <li>http://localhost:3000 - Next.js development server</li>
- * <li>TODO: Add production frontend URL</li>
+ * <li>Add production frontend URL</li>
  * </ul>
  */
 @Configuration

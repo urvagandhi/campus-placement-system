@@ -14,7 +14,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/a
  */
 const getToken = () => {
     if (typeof window !== 'undefined') {
-        return localStorage.getItem('auth_token');
+        return localStorage.getItem('authToken');
     }
     return null;
 };
@@ -45,7 +45,7 @@ const handleResponse = async (response) => {
         // Handle specific error codes
         if (response.status === 401) {
             // Token expired or invalid
-            localStorage.removeItem('auth_token');
+            localStorage.removeItem('authToken');
             window.location.href = '/login';
         }
         throw new Error(data.message || 'An error occurred');

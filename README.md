@@ -11,7 +11,7 @@ This project provides a complete skeleton for a campus placement management syst
 
 > **Note:** The AI module acts strictly as a decision-support system and does not autonomously make placement decisions.
 >
-> **Disclaimer:** In the current frontend-only phase, user roles are mocked for UI demonstration. In the final system, roles are determined by backend authentication and not selected by users.
+> **Authentication:** Authentication is centralized and role-driven. User roles are determined by backend authentication logic and never selected by users, ensuring secure and scalable role-based access control.
 
 ## 🏗️ Architecture
 
@@ -88,7 +88,7 @@ Placement Management/
 | Backend | Java + Spring Boot | 21+ / 3.2.x |
 | AI Service | Python + FastAPI | 3.10+ / 0.109.0 |
 | Frontend | Next.js (React) | 14+ |
-| Database | MySQL | 8.x |
+| Database | PostgreSQL | 15+ |
 | Build Tool | Maven | 3.9+ |
 
 ## 🚀 Getting Started
@@ -98,7 +98,7 @@ Placement Management/
 - Java 21+
 - Python 3.10+
 - Node.js 18+
-- MySQL 8.x
+- PostgreSQL 15+
 - Maven 3.9+
 
 ### Backend Setup
@@ -172,7 +172,7 @@ Frontend runs at: `http://localhost:3000`
 | Student | `/dashboard/student` |
 | Placement Coordinator (TPO) | `/dashboard/coordinator` |
 | Admin | `/dashboard/admin` |
-| Super Admin | `/dashboard/super-admin` |
+| Super Admin | `/dashboard/superadmin` |
 
 ## 📡 API Endpoints
 
@@ -192,7 +192,8 @@ See [docs/api-specs.md](docs/api-specs.md) for detailed API documentation.
 
 ## 🔮 Future Extensions
 
-- [ ] JWT authentication implementation
+- [x] JWT authentication implementation
+- [x] Multi-college support
 - [ ] Database relationships and constraints
 - [ ] Actual AI scoring algorithms
 - [ ] State management (Zustand/Redux)

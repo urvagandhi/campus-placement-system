@@ -7,6 +7,20 @@ import lombok.NoArgsConstructor;
 
 /**
  * DTO for login response containing token and user details.
+ *
+ * <p>
+ * Matches the API contract:
+ * 
+ * <pre>
+ * {
+ *   "token": "jwt-token",
+ *   "userId": 12,
+ *   "role": "COORDINATOR",
+ *   "collegeId": 3,
+ *   "redirectUrl": "/dashboard/coordinator"
+ * }
+ * </pre>
+ * </p>
  */
 @Data
 @Builder
@@ -14,22 +28,28 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LoginResponseDTO {
 
+    /**
+     * JWT access token.
+     */
     private String token;
-    private String tokenType;
-    private Long expiresIn;
-    private UserInfo user;
 
     /**
-     * Nested class for basic user information.
+     * User's database ID.
      */
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class UserInfo {
-        private Long id;
-        private String email;
-        private String name;
-        private String role;
-    }
+    private Long userId;
+
+    /**
+     * User's role (STUDENT, COORDINATOR, ADMIN, SUPER_ADMIN).
+     */
+    private String role;
+
+    /**
+     * User's college ID (null for SUPER_ADMIN).
+     */
+    private Long collegeId;
+
+    /**
+     * Role-based redirect URL for frontend navigation.
+     */
+    private String redirectUrl;
 }

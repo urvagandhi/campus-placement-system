@@ -1,15 +1,14 @@
 'use client';
 
 import Logo from '@/components/ui/Logo';
+import { useAuth } from '@/hooks/useAuth';
 import { Bell, ChevronDown, LogOut, Search } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 export default function SuperAdminNavbar() {
-    const router = useRouter();
+    const { logout } = useAuth();
 
     const handleLogout = () => {
-        localStorage.removeItem('userRole');
-        router.push('/login');
+        logout();
     };
 
     return (

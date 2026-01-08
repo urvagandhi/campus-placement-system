@@ -3,11 +3,13 @@
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import { useAuth } from '@/hooks/useAuth';
 import { ArrowRight, CheckCircle, Clock, Hand, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 export default function StudentDashboard() {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -36,6 +38,9 @@ export default function StudentDashboard() {
         { label: 'Pending', value: '4', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-100/50' },
     ];
 
+    // Get user's display name from auth context
+    const displayName = user?.name || user?.email?.split('@')[0] || 'Student';
+
     return (
         <div className="space-y-8 animate-fade-in">
             {/* Welcome Section - Apple Style Hero */}
@@ -47,7 +52,7 @@ export default function StudentDashboard() {
                         <Hand className="h-6 w-6 text-yellow-500 animate-wave origin-bottom-right" />
                         <span className="text-sm font-semibold text-indigo-600 uppercase tracking-wider">Welcome back</span>
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Hello, John Doe</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Hello, {displayName}</h1>
                     <p className="text-gray-600 mt-2 max-w-lg text-lg">Your placement journey is looking great. You have 2 new interview calls scheduled.</p>
                 </div>
                 <Link href="/dashboard/student/drives" className="relative z-10 w-full sm:w-auto">

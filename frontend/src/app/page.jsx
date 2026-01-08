@@ -92,7 +92,7 @@ export default function Home() {
       </main>
 
       <footer className="py-8 text-center text-gray-400 text-sm relative z-10">
-        <p>© 2024 PlacementPro. Crafted with precision.</p>
+        <p>&copy; {new Date().getFullYear()} PlacementPro System. Secure & Encrypted.</p>
       </footer>
     </div>
   );

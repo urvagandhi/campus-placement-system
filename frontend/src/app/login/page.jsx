@@ -3,13 +3,13 @@
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Logo from '@/components/ui/Logo';
+import { useAuth } from '@/hooks/useAuth';
 import { Lock, Mail } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function LoginPage() {
-    const router = useRouter();
+    const { login } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
@@ -32,54 +32,35 @@ export default function LoginPage() {
         setIsLoading(true);
         setError('');
 
-        // Simulate API call delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Mock Validation
+        // Validation
         if (!formData.email || !formData.password) {
             setError('Please fill in all fields.');
             setIsLoading(false);
             return;
         }
 
-        // Mock Login Success - Role Detection Logic
-        let role = 'STUDENT';
-        const emailLower = formData.email.toLowerCase();
-
-        if (emailLower.includes('tpo') || emailLower.includes('coordinator')) {
-            role = 'COORDINATOR';
-        } else if (emailLower.startsWith('admin')) {
-            role = 'ADMIN';
-        } else if (emailLower.startsWith('super') || emailLower.includes('superadmin')) {
-            role = 'SUPER_ADMIN';
-        } else {
-            role = 'STUDENT';
-        }
-
-        localStorage.setItem('userRole', role);
-
-        // Route based on role
-        switch (role) {
-            case 'STUDENT':
-                router.push('/dashboard/student');
-                break;
-            case 'COORDINATOR':
-                router.push('/dashboard/coordinator');
-                break;
-            case 'ADMIN':
-                router.push('/dashboard/admin');
-                break;
-            case 'SUPER_ADMIN':
-                router.push('/dashboard/super-admin');
-                break;
-            default:
-                router.push('/dashboard/student');
+        try {
+            // Use AuthContext login (handles token storage and redirect)
+            await login(formData.email, formData.password);
+        } catch (err) {
+            // Handle specific error cases
+            if (err.message.includes('credentials')) {
+                setError('Invalid email or password.');
+            } else if (err.message.includes('deactivated')) {
+                setError('Your account has been deactivated. Please contact an administrator.');
+            } else if (err.message.includes('College')) {
+                setError('Your college is not active. Please contact an administrator.');
+            } else {
+                setError(err.message || 'An error occurred. Please try again.');
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
 
     return (
         <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-[#f5f5f7]">
-            {/* Sophisticated Background Mesh - Not "Orbs" */}
+            {/* Sophisticated Background Mesh */}
             <div className="absolute inset-0 z-0">
                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-blue-400/20 blur-[120px]" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-400/20 blur-[120px]" />
@@ -109,16 +90,10 @@ export default function LoginPage() {
                                 <p className="font-medium flex gap-2">
                                     <span className="text-xl">⚠️</span>
                                     <span>
-                                        <strong>Role assignment is mocked in UI.</strong><br />
-                                        Use specific emails to test roles (e.g., student@..., tpo@..., admin@..., super@...).
-                                        Final roles are backend-determined.
+                                        <strong>Role is determined by the system.</strong><br />
+                                        Your role is assigned by administrators and cannot be changed during login.
                                     </span>
                                 </p>
-                            </div>
-
-                            {/* Role Selector Removed - System Decided Role */}
-                            <div className="hidden">
-                                {/* Hidden input if needed for accessibility or form data structure, but logic handles it separately */}
                             </div>
 
                             <div className="space-y-4">
@@ -148,6 +123,7 @@ export default function LoginPage() {
                                         value={formData.password}
                                         onChange={handleChange}
                                         icon={Lock}
+                                        showPasswordToggle
                                         required
                                         className="scale-100 transition-transform focus-within:scale-[1.01]"
                                     />
@@ -171,19 +147,12 @@ export default function LoginPage() {
                             </Button>
                         </form>
 
-                        <div className="mt-8 pt-6 border-t border-gray-100/60 text-center">
-                            <p className="text-sm text-gray-500">
-                                New to the platform?{' '}
-                                <Link href="/register" className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-all">
-                                    Create an account
-                                </Link>
-                            </p>
-                        </div>
+                        {/* Footer - Registration removed: handled by TPO in Student Onboarding */}
                     </div>
 
                     <div className="mt-8 text-center">
                         <p className="text-xs text-gray-400 font-medium tracking-wide">
-                            © 2024 PlacementPro System. Secure & Encrypted.
+                            &copy; {new Date().getFullYear()} PlacementPro System. Secure & Encrypted.
                         </p>
                     </div>
                 </div>

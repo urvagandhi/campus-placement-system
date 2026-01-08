@@ -20,7 +20,9 @@ import lombok.RequiredArgsConstructor;
  * REST controller for authentication endpoints.
  *
  * <p>
- * Handles user authentication including login, registration, and logout.
+ * Authentication is centralized and role-driven. User roles are determined by
+ * backend authentication logic and never selected by users, ensuring secure and
+ * scalable role-based access control.
  * </p>
  *
  * <p>
@@ -43,17 +45,23 @@ public class AuthController {
     /**
      * Authenticates a user and returns a JWT token.
      *
-     * @param request login credentials
+     * <p>
+     * Response includes:
+     * <ul>
+     * <li>token - JWT access token</li>
+     * <li>userId - User's database ID</li>
+     * <li>role - User's role (STUDENT, COORDINATOR, ADMIN, SUPER_ADMIN)</li>
+     * <li>collegeId - User's college ID (null for SUPER_ADMIN)</li>
+     * <li>redirectUrl - Role-based dashboard URL</li>
+     * </ul>
+     * </p>
+     *
+     * @param request login credentials (email + password)
      * @return JWT token and user details
      */
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponseDTO>> login(
             @Valid @RequestBody LoginRequestDTO request) {
-        // TODO: Implement login logic
-        // 1. Validate credentials
-        // 2. Generate JWT token
-        // 3. Return token and user details
-
         LoginResponseDTO response = authService.login(request);
         return ResponseEntity.ok(ApiResponse.success(response, "Login successful"));
     }
@@ -61,18 +69,17 @@ public class AuthController {
     /**
      * Registers a new user in the system.
      *
+     * <p>
+     * Note: Registered users are assigned STUDENT role by default.
+     * Role changes require admin action.
+     * </p>
+     *
      * @param request registration details
      * @return success message
      */
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<String>> register(
             @Valid @RequestBody RegisterRequestDTO request) {
-        // TODO: Implement registration logic
-        // 1. Validate unique email
-        // 2. Hash password
-        // 3. Create user record
-        // 4. Send verification email (optional)
-
         authService.register(request);
         return ResponseEntity.ok(ApiResponse.success("User registered successfully"));
     }
@@ -80,14 +87,15 @@ public class AuthController {
     /**
      * Logs out the current user.
      *
+     * <p>
+     * Note: With JWT, logout is primarily client-side (clear token).
+     * This endpoint clears the server-side security context.
+     * </p>
+     *
      * @return success message
      */
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<String>> logout() {
-        // TODO: Implement logout logic
-        // 1. Invalidate JWT token (add to blacklist)
-        // 2. Clear any server-side session
-
         authService.logout();
         return ResponseEntity.ok(ApiResponse.success("Logout successful"));
     }
@@ -99,10 +107,6 @@ public class AuthController {
      */
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<LoginResponseDTO>> getCurrentUser() {
-        // TODO: Implement get current user logic
-        // 1. Extract user from security context
-        // 2. Return user details
-
         LoginResponseDTO user = authService.getCurrentUser();
         return ResponseEntity.ok(ApiResponse.success(user));
     }

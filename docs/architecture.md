@@ -180,7 +180,7 @@ contribute academic constraints as data rather than decision-making roles.
 | Student | `/dashboard/student` | `StudentLayout` |
 | Placement Coordinator | `/dashboard/coordinator` | `CoordinatorLayout` |
 | Admin | `/dashboard/admin` | `AdminLayout` |
-| Super Admin | `/dashboard/super-admin` | `SuperAdminLayout` |
+| Super Admin | `/dashboard/superadmin` | `SuperAdminLayout` |
 
 ### Layout Hierarchy
 

@@ -4,29 +4,49 @@
 spring:
   application:
     name: campus-placement-system
+  config:
+    import: optional:file:.env[.properties]
 
-  # Database Configuration
+  # Database Configuration - PostgreSQL/Supabase
   datasource:
-    url: jdbc:mysql://localhost:3306/campus_placement?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
-    username: root
-    password: # TODO: Configure database password
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/campus_placement}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 60000
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      keepalive-time: 30000
 
   # JPA Configuration
   jpa:
     hibernate:
       ddl-auto: update
+    defer-datasource-initialization: false
+  sql:
+    init:
+      mode: always
+      separator: ;;
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 # Server Configuration
 server:
   port: 8080
   servlet:
     context-path: /
+
+# JWT Configuration
+app:
+  jwt:
+    secret: ${JWT_SECRET:ThisIsAVerySecureSecretKeyForJWTTokenGenerationMinimum256BitsLong}
+    expiration-ms: 86400000  # 24 hours
 
 # AI Service Configuration
 # The AI module acts strictly as a decision-support system

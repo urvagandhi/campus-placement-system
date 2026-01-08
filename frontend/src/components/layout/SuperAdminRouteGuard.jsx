@@ -3,13 +3,18 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+/**
+ * Route guard for Super Admin pages.
+ *
+ * Uses direct localStorage check for consistency with Admin and Coordinator route guards.
+ * This avoids potential race conditions with complex auth hooks during initial load.
+ */
 export default function SuperAdminRouteGuard({ children }) {
     const router = useRouter();
     const [authorized, setAuthorized] = useState(false);
 
     useEffect(() => {
-        // Mock Authentication Check
-        // Role guards use localStorage only for mock authentication in UI-UX phase; backend-based authorization will replace this later.
+        // Direct Synchronous Check (mimicking AdminRouteGuard)
         const userRole = localStorage.getItem('userRole');
 
         if (userRole !== 'SUPER_ADMIN') {

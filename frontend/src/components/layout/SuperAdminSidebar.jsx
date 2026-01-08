@@ -12,9 +12,9 @@ export default function SuperAdminSidebar() {
     const pathname = usePathname();
 
     const menuItems = [
-        { name: 'Dashboard', href: '/dashboard/super-admin', icon: LayoutDashboard },
-        { name: 'Manage Colleges', href: '/dashboard/super-admin/colleges', icon: Building2 },
-        { name: 'System Settings', href: '/dashboard/super-admin/settings', icon: Settings },
+        { name: 'Dashboard', href: '/dashboard/superadmin', icon: LayoutDashboard },
+        { name: 'Manage Colleges', href: '/dashboard/superadmin/colleges', icon: Building2 },
+        { name: 'System Settings', href: '/dashboard/superadmin/settings', icon: Settings },
     ];
 
     const isActive = (path) => pathname === path || pathname.startsWith(`${path}/`);

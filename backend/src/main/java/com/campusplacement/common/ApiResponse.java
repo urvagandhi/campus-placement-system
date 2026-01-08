@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
  * <p>
  * <strong>Response Structure:</strong>
  * </p>
- * 
+ *
  * <pre>
  * {
  *   "success": true,
@@ -103,7 +103,7 @@ public class ApiResponse<T> {
      * @param <T>     type of data (will be null)
      * @return ApiResponse instance
      */
-    public static <T> ApiResponse<T> error(String message, List<String> errors) {
+    public static <T> ApiResponse<T> errorWithList(String message, List<String> errors) {
         return ApiResponse.<T>builder()
                 .success(false)
                 .message(message)
@@ -121,5 +121,22 @@ public class ApiResponse<T> {
      */
     public static <T> ApiResponse<T> error(String message) {
         return error(message, null);
+    }
+
+    /**
+     * Creates an error response with data (e.g., validation errors).
+     *
+     * @param message error message
+     * @param data    additional error data
+     * @param <T>     type of data
+     * @return ApiResponse instance
+     */
+    public static <T> ApiResponse<T> error(String message, T data) {
+        return ApiResponse.<T>builder()
+                .success(false)
+                .message(message)
+                .data(data)
+                .timestamp(LocalDateTime.now())
+                .build();
     }
 }

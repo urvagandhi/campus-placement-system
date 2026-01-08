@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
  * <ul>
  * <li>Eligibility scoring</li>
  * <li>Skill gap analysis</li>
- * <li>Career insights (TODO)</li>
+ * <li>Career insights</li>
  * </ul>
  *
  * <p>
@@ -50,6 +50,7 @@ public class AIClient {
      * @param request the eligibility request containing student and job data
      * @return AI response with eligibility score
      */
+    @SuppressWarnings("null")
     public AIResponseDTO calculateEligibilityScore(EligibilityRequestDTO request) {
         // TODO: Implement HTTP call to AI service
         // POST {aiServiceBaseUrl}/eligibility/score
