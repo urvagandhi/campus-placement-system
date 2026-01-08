@@ -36,10 +36,13 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * Endpoint Protection Rules:
  * <ul>
- * <li>/api/v1/auth/** - Permit all (login, register)</li>
+ * <li>/api/v1/auth/login - Permit all</li>
+ * <li>/api/v1/auth/logout - Authenticated</li>
+ * <li>/api/v1/auth/me - Authenticated</li>
+ * <li>/api/v1/users/students - COORDINATOR, ADMIN, SUPER_ADMIN</li>
+ * <li>/api/v1/users/coordinators - ADMIN, SUPER_ADMIN</li>
+ * <li>/api/v1/users/admins - SUPER_ADMIN only</li>
  * <li>/api/v1/admin/** - ADMIN, SUPER_ADMIN only</li>
- * <li>/api/v1/coordinator/** - COORDINATOR only</li>
- * <li>/api/v1/student/** - STUDENT only</li>
  * <li>/api/v1/superadmin/** - SUPER_ADMIN only</li>
  * </ul>
  * </p>
@@ -67,13 +70,13 @@ public class SecurityConfig {
 
                 // Authorization rules
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        // Public endpoints - only login is public
+                        .requestMatchers("/api/v1/auth/login").permitAll()
                         .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/health", "/actuator/**").permitAll()
 
                         // Role-based protection
-                        .requestMatchers("/api/v1/superadmin**").hasRole("SUPER_ADMIN")
+                        .requestMatchers("/api/v1/superadmin/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/v1/coordinator/**").hasAnyRole("COORDINATOR", "ADMIN", "SUPER_ADMIN")
                         .requestMatchers("/api/v1/student/**")

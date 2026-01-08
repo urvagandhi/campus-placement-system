@@ -55,23 +55,25 @@ Login and receive JWT token.
 }
 ```
 
-### POST `/api/v1/auth/register`
-
-Register new user.
-
-**Request:**
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "password123",
-  "confirmPassword": "password123"
-}
-```
-
 ### GET `/api/v1/auth/me`
 
 Get current authenticated user.
+
+---
+
+## User Governance Endpoints
+
+### POST `/api/v1/coordinator/students`
+Create new student (Coordinator only). Requires valid `organizationUnitId`.
+
+### POST `/api/v1/admin/coordinators`
+Create new coordinator (Admin only).
+
+### POST `/api/v1/superadmin/admins`
+Create new admin (Super Admin only).
+
+### POST `/api/v1/superadmin/colleges`
+Create new college (Super Admin only).
 
 ---
 

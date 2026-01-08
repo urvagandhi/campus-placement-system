@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.campusplacement.auth.dto.LoginRequestDTO;
 import com.campusplacement.auth.dto.LoginResponseDTO;
-import com.campusplacement.auth.dto.RegisterRequestDTO;
 import com.campusplacement.common.ApiResponse;
 import com.campusplacement.common.Constants;
 
@@ -64,24 +63,6 @@ public class AuthController {
             @Valid @RequestBody LoginRequestDTO request) {
         LoginResponseDTO response = authService.login(request);
         return ResponseEntity.ok(ApiResponse.success(response, "Login successful"));
-    }
-
-    /**
-     * Registers a new user in the system.
-     *
-     * <p>
-     * Note: Registered users are assigned STUDENT role by default.
-     * Role changes require admin action.
-     * </p>
-     *
-     * @param request registration details
-     * @return success message
-     */
-    @PostMapping("/register")
-    public ResponseEntity<ApiResponse<String>> register(
-            @Valid @RequestBody RegisterRequestDTO request) {
-        authService.register(request);
-        return ResponseEntity.ok(ApiResponse.success("User registered successfully"));
     }
 
     /**

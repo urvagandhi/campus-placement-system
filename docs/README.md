@@ -190,14 +190,61 @@ All backend APIs use the `/api/v1` prefix.
 
 See [docs/api-specs.md](docs/api-specs.md) for detailed API documentation.
 
+## 🧪 Testing
+
+### Backend Tests
+
+```bash
+cd backend
+
+# Unit tests
+mvn test -Dtest=AuthServiceTest,JwtTokenProviderTest
+
+# Integration tests (requires Docker)
+mvn test -Dtest=*IntegrationTest
+```
+
+### Frontend Tests
+
+```bash
+cd frontend
+
+# Unit tests (Jest)
+npm test
+
+# With coverage
+npm run test:coverage
+
+# E2E tests (Playwright)
+npm run test:e2e
+```
+
+### Test Summary
+
+| Category | Tests | Status |
+|----------|-------|--------|
+| Backend Unit | 34 | ✅ Passing |
+| Frontend Unit | 47 | ✅ Passing |
+| Frontend E2E | 22 | ✅ Passing |
+| **Total** | **103** | ✅ |
+
+### Test Users (Dev/Test)
+
+| Email | Role | Password |
+|-------|------|----------|
+| student@test.edu | STUDENT | password123 |
+| coordinator@test.edu | COORDINATOR | password123 |
+| admin@test.edu | ADMIN | password123 |
+| superadmin@platform.com | SUPER_ADMIN | password123 |
+
 ## 🔮 Future Extensions
 
 - [x] JWT authentication implementation
 - [x] Multi-college support
+- [x] Unit and integration tests
 - [ ] Database relationships and constraints
 - [ ] Actual AI scoring algorithms
 - [ ] State management (Zustand/Redux)
-- [ ] Unit and integration tests
 - [ ] Docker containerization
 - [ ] CI/CD pipeline
 

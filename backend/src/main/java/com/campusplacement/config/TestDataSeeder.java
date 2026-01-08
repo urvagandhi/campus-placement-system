@@ -38,6 +38,7 @@ public class TestDataSeeder {
     private static final Logger log = LoggerFactory.getLogger(TestDataSeeder.class);
     private static final String TEST_PASSWORD = "password123";
 
+    @SuppressWarnings("null")
     @Bean
     CommandLineRunner seedTestData(
             CollegeRepository collegeRepository,

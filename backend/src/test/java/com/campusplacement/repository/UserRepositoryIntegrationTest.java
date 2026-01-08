@@ -52,6 +52,7 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
     private College otherCollege;
     private User testUser;
 
+    @SuppressWarnings("null")
     @BeforeEach
     void setUp() {
         // Clean up
@@ -126,6 +127,7 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
             assertEquals("Test College", result.get().getCollege().getName());
         }
 
+        @SuppressWarnings("null")
         @Test
         @DisplayName("Returns super admin with null college")
         void findByEmailWithCollege_SuperAdmin_ReturnsWithNullCollege() {
@@ -198,6 +200,7 @@ class UserRepositoryIntegrationTest extends AbstractIntegrationTest {
             assertFalse(exists);
         }
 
+        @SuppressWarnings("null")
         @Test
         @DisplayName("Email uniqueness per college allows same email in different colleges")
         void emailUniquenessPerCollege_AllowsSameEmailInDifferentColleges() {

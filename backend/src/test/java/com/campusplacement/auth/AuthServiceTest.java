@@ -96,6 +96,7 @@ class AuthServiceTest {
                 lenient().when(httpServletRequest.getRemoteAddr()).thenReturn("127.0.0.1");
         }
 
+        @SuppressWarnings("null")
         @Test
         @DisplayName("Login success returns token and redirect URL")
         void testLoginSuccess_ReturnsTokenAndRedirectUrl() {
@@ -123,6 +124,7 @@ class AuthServiceTest {
                 verify(userRepository).save(testUser);
         }
 
+        @SuppressWarnings("null")
         @Test
         @DisplayName("Login with invalid password throws AuthenticationException")
         void testLoginWithInvalidPassword_ThrowsAuthenticationException() {
@@ -139,6 +141,7 @@ class AuthServiceTest {
                 verify(loginAuditRepository).save(any(LoginAudit.class));
         }
 
+        @SuppressWarnings("null")
         @Test
         @DisplayName("Login with unknown email throws AuthenticationException")
         void testLoginWithUnknownEmail_ThrowsAuthenticationException() {
@@ -257,6 +260,7 @@ class AuthServiceTest {
                 assertEquals("ADMIN", response.getRole());
         }
 
+        @SuppressWarnings("null")
         @Test
         @DisplayName("Successful login updates lastLogin timestamp")
         void testLoginSuccess_UpdatesLastLogin() {
@@ -277,6 +281,7 @@ class AuthServiceTest {
                 verify(userRepository).save(testUser);
         }
 
+        @SuppressWarnings("null")
         @Test
         @DisplayName("Successful login creates audit with success=true")
         void testLoginSuccess_CreatesSuccessAudit() {
@@ -297,6 +302,7 @@ class AuthServiceTest {
                                 audit.getEmail().equals("student@test.edu")));
         }
 
+        @SuppressWarnings("null")
         @Test
         @DisplayName("Failed login with wrong password creates audit with success=false")
         void testLoginFailure_WrongPassword_CreatesFailureAudit() {
@@ -317,6 +323,7 @@ class AuthServiceTest {
                                 audit.getEmail().equals("student@test.edu")));
         }
 
+        @SuppressWarnings("null")
         @Test
         @DisplayName("Failed login with unknown email creates audit with null userId")
         void testLoginFailure_UnknownEmail_CreatesAuditWithNullUserId() {

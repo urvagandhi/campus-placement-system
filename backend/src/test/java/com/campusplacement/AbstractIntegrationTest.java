@@ -35,6 +35,7 @@ public abstract class AbstractIntegrationTest {
      * Shared PostgreSQL container for all tests.
      * Uses the same PostgreSQL version as production.
      */
+    @SuppressWarnings("resource")
     @Container
     protected static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("test_campus_placement")

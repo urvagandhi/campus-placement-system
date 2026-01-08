@@ -20,9 +20,13 @@ public class UserDTO {
     private String name;
     private String email;
     private String role;
+    private Long collegeId;
+    private String collegeName;
+    private Long organizationUnitId;
     private Boolean isActive;
     private String phoneNumber;
     private String profileImageUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime lastLogin;
 }
