@@ -112,6 +112,17 @@ export const studentsApi = {
         return fetchApi('/students/me');
     },
 
+    /**
+     * Update career-layer profile fields only.
+     * Academic fields will be ignored by backend.
+     */
+    updateCareerProfile: async (data) => {
+        return fetchApi('/students/me/profile', {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
+    },
+
     updateProfile: async (data) => {
         return fetchApi('/students', {
             method: 'POST',

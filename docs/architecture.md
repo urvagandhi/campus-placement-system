@@ -153,10 +153,36 @@ contribute academic constraints as data rather than decision-making roles.
 > unnecessary system complexity.
 
 ### How It Works
+
 - Admin maintains academic calendar per department
 - Coordinator sees conflict warnings when scheduling drives
 - Department influence is **informational only**
 - Final placement decisions rest with the Coordinator
+
+## Student Data Ownership Model
+
+> See [security.md](security.md) for the complete security documentation.
+
+### Core Principle
+
+Roles define **WHAT** a user can do. Organizational assignments define **WHERE** they can do it.
+
+### Field Classifications
+
+| Category | Fields | Owner |
+|----------|--------|-------|
+| **Academic Truth** | `enrollmentNo`, `departmentId`, `cgpa`, `backlogs`, `batchYear`, `semester` | Institution (immutable by student) |
+| **Career Layer** | `skills`, `resumeUrl`, `projectsCount`, `internshipMonths`, `certifications`, `linkedinUrl`, `githubUrl`, `careerInterests` | Student (editable) |
+
+### Organization Hierarchy
+
+Organization path is always derived via FK joins: `Department → Institute → College`.
+Never hard-code or duplicate college/institute data.
+
+### API Contracts
+
+- `GET /api/v1/students/me` - Full profile with hierarchy (student self-access)
+- `PATCH /api/v1/students/me/profile` - Career fields only (student self-edit)
 
 ## Scalability Considerations
 
