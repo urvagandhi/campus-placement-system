@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.campusplacement.auth.dto.LoginRequestDTO;
 import com.campusplacement.auth.dto.LoginResponseDTO;
 import com.campusplacement.auth.dto.RegisterRequestDTO;
+import com.campusplacement.auth.dto.TokenRefreshRequestDTO;
+import com.campusplacement.auth.dto.TokenRefreshResponseDTO;
 import com.campusplacement.auth.exception.AccountDeactivatedException;
 import com.campusplacement.auth.exception.AuthenticationException;
 import com.campusplacement.auth.exception.CollegeInactiveException;
@@ -47,6 +49,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final LoginAuditRepository loginAuditRepository;
+    private final RefreshTokenService refreshTokenService;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final HttpServletRequest httpServletRequest;
@@ -109,22 +112,27 @@ public class AuthService {
             }
         }
 
-        // 5. Generate JWT token
+        // 5. Generate JWT access token
         String token = jwtTokenProvider.generateToken(user);
 
-        // 6. Build redirect URL
+        // 6. Create refresh token
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
+
+        // 7. Build redirect URL
         String redirectUrl = buildRedirectUrl(user.getRole());
 
-        // 7. Update last login & audit
+        // 8. Update last login & audit
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
         auditLogin(user.getId(), email, true, SecurityAuditEventType.LOGIN);
 
         log.info("User {} logged in successfully with role {}", email, user.getRole());
 
-        // 8. Return response
+        // 9. Return response with both tokens
         return LoginResponseDTO.builder()
                 .token(token)
+                .refreshToken(refreshToken.getToken())
+                .expiresIn(jwtTokenProvider.getAccessExpirationMs())
                 .userId(user.getId())
                 .role(user.getRole().name())
                 .collegeId(user.getCollege() != null ? user.getCollege().getId() : null)
@@ -171,13 +179,41 @@ public class AuthService {
      * Logs out the current user.
      *
      * <p>
-     * Note: With JWT, logout is handled client-side by clearing the token.
-     * This method clears the security context on the server.
+     * Revokes all refresh tokens and clears the security context.
      * </p>
+     *
+     * @param refreshToken the refresh token to revoke (optional)
      */
-    public void logout() {
+    @Transactional
+    public void logout(String refreshToken) {
+        // Revoke the specific refresh token if provided
+        if (refreshToken != null && !refreshToken.isEmpty()) {
+            refreshTokenService.revokeRefreshToken(refreshToken);
+        }
         SecurityContextHolder.clearContext();
         log.debug("User logged out, security context cleared");
+    }
+
+    /**
+     * Refreshes the access token using a valid refresh token.
+     *
+     * @param request the refresh token request
+     * @return new access and refresh tokens
+     */
+    @Transactional
+    public TokenRefreshResponseDTO refreshToken(TokenRefreshRequestDTO request) {
+        return refreshTokenService.refreshAccessToken(request.getRefreshToken());
+    }
+
+    /**
+     * Revokes all refresh tokens for a user (logout from all devices).
+     *
+     * @param userId the user ID
+     * @return number of tokens revoked
+     */
+    @Transactional
+    public int logoutAllDevices(Long userId) {
+        return refreshTokenService.revokeAllUserTokens(userId);
     }
 
     /**

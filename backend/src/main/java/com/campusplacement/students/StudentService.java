@@ -13,6 +13,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.campusplacement.auth.LoginAudit;
+import com.campusplacement.auth.LoginAuditRepository;
+import com.campusplacement.auth.SecurityAuditEventType;
 import com.campusplacement.common.UserRole;
 import com.campusplacement.organizations.OrganizationUnit;
 import com.campusplacement.security.CustomUserDetails;
@@ -47,6 +50,7 @@ public class StudentService {
 
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
+    private final LoginAuditRepository loginAuditRepository;
 
     // ==================== Read Operations ====================
 
@@ -123,7 +127,7 @@ public class StudentService {
 
     /**
      * Updates student's career-layer profile fields.
-     * 
+     *
      * <p>
      * <strong>Security:</strong> Only career-layer fields are updated.
      * Academic fields (cgpa, enrollmentNo, departmentId, backlogs, batchYear,
@@ -173,12 +177,15 @@ public class StudentService {
         StudentProfile saved = studentRepository.save(profile);
         log.info("Career profile updated for user: {}", userId);
 
+        // Audit the profile update
+        auditProfileEvent(userId, SecurityAuditEventType.PROFILE_UPDATE, true);
+
         return toFullResponseDTO(saved);
     }
 
     /**
      * Creates or updates a student profile.
-     * 
+     *
      * <p>
      * <strong>Access Control:</strong>
      * <ul>
@@ -232,6 +239,10 @@ public class StudentService {
         updateCareerFields(profile, profileDTO);
 
         StudentProfile saved = studentRepository.save(profile);
+
+        // Audit the profile update
+        auditProfileEvent(userId, SecurityAuditEventType.PROFILE_UPDATE, true);
+
         return toBasicDTO(saved);
     }
 
@@ -261,6 +272,9 @@ public class StudentService {
         StudentProfile saved = studentRepository.save(profile);
         log.info("Skills updated for profile: {}", id);
 
+        // Audit the skill update
+        auditProfileEvent(currentUserId, SecurityAuditEventType.PROFILE_UPDATE, true);
+
         return toBasicDTO(saved);
     }
 
@@ -280,6 +294,34 @@ public class StudentService {
             throw new AccessDeniedException("User not authenticated");
         }
         return ((CustomUserDetails) auth.getPrincipal()).getRole();
+    }
+
+    /**
+     * Records a profile-related audit event.
+     *
+     * @param userId    the user ID
+     * @param eventType the type of event (PROFILE_UPDATE, PROFILE_VIEW)
+     * @param success   whether the operation was successful
+     */
+    @SuppressWarnings("null")
+    private void auditProfileEvent(Long userId, SecurityAuditEventType eventType, boolean success) {
+        try {
+            User user = userRepository.findById(userId).orElse(null);
+            String email = user != null ? user.getEmail() : "unknown";
+
+            LoginAudit audit = LoginAudit.builder()
+                    .userId(userId)
+                    .email(email)
+                    .eventType(eventType)
+                    .success(success)
+                    .build();
+
+            loginAuditRepository.save(audit);
+            log.debug("Profile audit recorded: userId={}, event={}, success={}", userId, eventType, success);
+        } catch (Exception e) {
+            log.error("Failed to record profile audit for user: {}", userId, e);
+            // Don't fail the operation if auditing fails
+        }
     }
 
     private void updateCareerFields(StudentProfile profile, StudentProfileDTO dto) {

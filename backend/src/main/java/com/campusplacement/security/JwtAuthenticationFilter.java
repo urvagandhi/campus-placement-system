@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.campusplacement.common.CookieUtils;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  * <p>
  * Flow:
  * <ol>
- * <li>Extract Authorization: Bearer &lt;token&gt; header</li>
+ * <li>Extract token from Authorization header or httpOnly cookie</li>
  * <li>Validate token using JwtTokenProvider</li>
  * <li>Load user details and set authentication context</li>
  * <li>Continue filter chain</li>
@@ -38,6 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
+    private final CookieUtils cookieUtils;
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
@@ -72,16 +75,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Extracts JWT token from the Authorization header.
+     * Extracts JWT token from the request.
+     * Priority: Authorization header > Cookie
      *
      * @param request the HTTP request
      * @return the JWT token, or null if not present
      */
     private String extractJwtFromRequest(HttpServletRequest request) {
+        // First, try Authorization header
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
-
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
             return bearerToken.substring(BEARER_PREFIX.length());
+        }
+
+        // Fall back to httpOnly cookie
+        String cookieToken = cookieUtils.getAccessTokenFromCookies(request);
+        if (StringUtils.hasText(cookieToken)) {
+            return cookieToken;
         }
 
         return null;

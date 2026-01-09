@@ -70,8 +70,8 @@ public class SecurityConfig {
 
                 // Authorization rules
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints - only login is public
-                        .requestMatchers("/api/v1/auth/login").permitAll()
+                        // Public endpoints - login and refresh are public
+                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
                         .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/health", "/actuator/**").permitAll()
 

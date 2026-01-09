@@ -3,50 +3,98 @@
  *
  * Handles all HTTP requests to the Java backend with:
  * - Base URL configuration
- * - Auth token injection
+ * - Cookie-based authentication (httpOnly cookies)
  * - Error handling
+ * - Automatic token refresh on 401
  */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
-/**
- * Get stored auth token
- */
-const getToken = () => {
-    if (typeof window !== 'undefined') {
-        return localStorage.getItem('authToken');
-    }
-    return null;
-};
+// Flag to prevent multiple simultaneous refresh attempts
+let isRefreshing = false;
+let refreshPromise = null;
 
 /**
- * Build request headers with auth token
+ * Build request headers
  */
 const getHeaders = () => {
-    const headers = {
+    return {
         'Content-Type': 'application/json',
     };
-
-    const token = getToken();
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    return headers;
 };
 
 /**
- * Handle API response
+ * Attempt to refresh the access token
  */
-const handleResponse = async (response) => {
+const attemptTokenRefresh = async () => {
+    // If already refreshing, wait for the existing refresh
+    if (isRefreshing && refreshPromise) {
+        return refreshPromise;
+    }
+
+    isRefreshing = true;
+    refreshPromise = (async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include', // Cookies sent automatically
+            });
+
+            if (!response.ok) {
+                return false;
+            }
+
+            const data = await response.json();
+            return data.success;
+        } catch (error) {
+            console.error('Token refresh failed:', error);
+            return false;
+        } finally {
+            isRefreshing = false;
+            refreshPromise = null;
+        }
+    })();
+
+    return refreshPromise;
+};
+
+/**
+ * Clear auth data and redirect to login
+ */
+const clearAuthAndRedirect = () => {
+    // Clear only user info from localStorage (tokens are in httpOnly cookies)
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('collegeId');
+    localStorage.removeItem('userName');
+    window.location.href = '/login';
+};
+
+/**
+ * Handle API response with token refresh on 401
+ */
+const handleResponse = async (response, retryFn = null) => {
+    // If 401 and we have a retry function, attempt refresh
+    if (response.status === 401 && retryFn) {
+        const refreshed = await attemptTokenRefresh();
+        if (refreshed) {
+            // Retry the original request with new token
+            return retryFn();
+        } else {
+            // Refresh failed, redirect to login
+            clearAuthAndRedirect();
+            throw new Error('Session expired. Please log in again.');
+        }
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
         // Handle specific error codes
         if (response.status === 401) {
-            // Token expired or invalid
-            localStorage.removeItem('authToken');
-            window.location.href = '/login';
+            // No retry function provided, just redirect
+            clearAuthAndRedirect();
         }
         throw new Error(data.message || 'An error occurred');
     }
@@ -55,18 +103,27 @@ const handleResponse = async (response) => {
 };
 
 /**
- * Generic fetch wrapper
+ * Generic fetch wrapper with automatic token refresh
  */
 const fetchApi = async (endpoint, options = {}) => {
     const url = `${API_BASE_URL}${endpoint}`;
 
-    const config = {
-        headers: getHeaders(),
-        ...options,
+    const makeRequest = async () => {
+        const config = {
+            headers: getHeaders(),
+            credentials: 'include', // Include cookies
+            ...options,
+        };
+        return fetch(url, config);
     };
 
-    const response = await fetch(url, config);
-    return handleResponse(response);
+    const response = await makeRequest();
+
+    // Pass retry function for 401 handling
+    return handleResponse(response, async () => {
+        const retryResponse = await makeRequest();
+        return handleResponse(retryResponse); // No retry on second attempt
+    });
 };
 
 // ==================== Auth API ====================

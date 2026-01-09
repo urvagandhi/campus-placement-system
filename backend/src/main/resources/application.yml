@@ -51,7 +51,15 @@ server:
 app:
   jwt:
     secret: ${JWT_SECRET:ThisIsAVerySecureSecretKeyForJWTTokenGenerationMinimum256BitsLong}
-    expiration-ms: 86400000  # 24 hours
+    access-expiration-ms: 900000  # 15 minutes
+    refresh-expiration-days: 7  # 7 days
+  audit:
+    retention-days: 90  # Keep audit logs for 90 days
+    cleanup-enabled: true  # Enable scheduled cleanup
+    cleanup-cron: "0 0 2 * * ?"  # Run daily at 2 AM
+  cookie:
+    secure: ${COOKIE_SECURE:false}  # Set to true in production (HTTPS)
+    domain: ${COOKIE_DOMAIN:}  # Leave empty for localhost
 
 # AI Service Configuration
 # The AI module acts strictly as a decision-support system

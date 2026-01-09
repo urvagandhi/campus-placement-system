@@ -7,7 +7,10 @@ public enum SecurityAuditEventType {
     LOGIN,
     REGISTER,
     LOGOUT,
+    TOKEN_REFRESH,
     PASSWORD_RESET,
     PASSWORD_CHANGE,
-    ACCOUNT_LOCKED
+    ACCOUNT_LOCKED,
+    PROFILE_UPDATE,
+    PROFILE_VIEW
 }

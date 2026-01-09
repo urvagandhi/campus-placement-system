@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  *
  * <p>
  * Matches the API contract:
- * 
+ *
  * <pre>
  * {
  *   "token": "jwt-token",
@@ -32,6 +32,17 @@ public class LoginResponseDTO {
      * JWT access token.
      */
     private String token;
+
+    /**
+     * Refresh token for obtaining new access tokens.
+     */
+    private String refreshToken;
+
+    /**
+     * Access token expiration time in milliseconds.
+     * Used by frontend to schedule automatic refresh.
+     */
+    private Long expiresIn;
 
     /**
      * User's database ID.

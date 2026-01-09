@@ -31,7 +31,7 @@ class JwtTokenProviderTest {
         // Set properties via reflection (simulating @Value injection)
         ReflectionTestUtils.setField(jwtTokenProvider, "jwtSecret",
                 "ThisIsAVerySecureSecretKeyForJWTTokenGenerationMinimum256BitsLong");
-        ReflectionTestUtils.setField(jwtTokenProvider, "jwtExpirationMs", 86400000L);
+        ReflectionTestUtils.setField(jwtTokenProvider, "accessExpirationMs", 86400000L);
 
         // Setup test college
         College testCollege = College.builder()
@@ -136,8 +136,8 @@ class JwtTokenProviderTest {
 
     @Test
     @DisplayName("Get expiration returns configured value")
-    void testGetExpirationMs_ReturnsConfiguredValue() {
-        assertEquals(86400000L, jwtTokenProvider.getExpirationMs());
+    void testGetAccessExpirationMs_ReturnsConfiguredValue() {
+        assertEquals(86400000L, jwtTokenProvider.getAccessExpirationMs());
     }
 
     @Test
@@ -147,7 +147,7 @@ class JwtTokenProviderTest {
         JwtTokenProvider shortLivedProvider = new JwtTokenProvider();
         ReflectionTestUtils.setField(shortLivedProvider, "jwtSecret",
                 "ThisIsAVerySecureSecretKeyForJWTTokenGenerationMinimum256BitsLong");
-        ReflectionTestUtils.setField(shortLivedProvider, "jwtExpirationMs", 1L); // 1ms expiration
+        ReflectionTestUtils.setField(shortLivedProvider, "accessExpirationMs", 1L); // 1ms expiration
 
         String token = shortLivedProvider.generateToken(testUser);
 

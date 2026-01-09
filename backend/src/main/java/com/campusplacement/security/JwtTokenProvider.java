@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  * <p>
  * <strong>JWT Payload Structure (Phase-1):</strong>
  * </p>
- * 
+ *
  * <pre>
  * {
  *   "ver": 1,
@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  * <p>
  * <strong>JWT Payload Structure (Phase-2 - Future):</strong>
  * </p>
- * 
+ *
  * <pre>
  * {
  *   "ver": 2,
@@ -79,8 +79,8 @@ public class JwtTokenProvider {
     @Value("${app.jwt.secret}")
     private String jwtSecret;
 
-    @Value("${app.jwt.expiration-ms}")
-    private long jwtExpirationMs;
+    @Value("${app.jwt.access-expiration-ms:900000}")
+    private long accessExpirationMs;
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
@@ -107,7 +107,7 @@ public class JwtTokenProvider {
      */
     public String generateToken(User user, Long orgUnitId) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
+        Date expiryDate = new Date(now.getTime() + accessExpirationMs);
 
         var builder = Jwts.builder()
                 .subject(user.getEmail())
@@ -269,11 +269,11 @@ public class JwtTokenProvider {
     }
 
     /**
-     * Gets the token expiration time in milliseconds.
+     * Gets the access token expiration time in milliseconds.
      *
      * @return expiration time in ms
      */
-    public long getExpirationMs() {
-        return jwtExpirationMs;
+    public long getAccessExpirationMs() {
+        return accessExpirationMs;
     }
 }

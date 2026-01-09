@@ -1,44 +1,14 @@
 'use client';
 
-import { login as apiLogin, logout as apiLogout } from '@/services/authService';
+import { getCurrentUser as apiGetCurrentUser, login as apiLogin, logout as apiLogout } from '@/services/authService';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AuthContext from './AuthContext';
 
-const TOKEN_KEY = 'authToken';
 const USER_ID_KEY = 'userId';
 const USER_ROLE_KEY = 'userRole';
 const COLLEGE_ID_KEY = 'collegeId';
 const USER_NAME_KEY = 'userName';
-
-/**
- * Parse JWT token to extract user info
- * Returns null if parsing fails (with try/catch for safety)
- */
-function parseJwt(token) {
-    try {
-        if (!token) return null;
-        const parts = token.split('.');
-        if (parts.length !== 3) return null;
-
-        const payload = JSON.parse(atob(parts[1]));
-
-        // Check if token is expired
-        if (payload.exp && payload.exp * 1000 < Date.now()) {
-            return null;
-        }
-
-        return {
-            id: payload.uid,
-            email: payload.sub,
-            role: payload.role,
-            collegeId: payload.cid || null,
-        };
-    } catch (error) {
-        console.error('Failed to parse JWT:', error);
-        return null;
-    }
-}
 
 /**
  * Get redirect URL based on role
@@ -56,8 +26,9 @@ function getRedirectUrl(role) {
 /**
  * AuthProvider Component
  *
- * Single source of truth for token storage and lifecycle.
- * Parses JWT on mount with try/catch - if parsing fails, auto logout.
+ * Manages user state with httpOnly cookie-based authentication.
+ * Tokens are stored in httpOnly cookies (not accessible by JS).
+ * User info is stored in localStorage for display purposes.
  */
 export function AuthProvider({ children }) {
     const router = useRouter();
@@ -65,10 +36,9 @@ export function AuthProvider({ children }) {
     const [isLoading, setIsLoading] = useState(true);
 
     /**
-     * Clear all auth data from localStorage
+     * Clear user data from localStorage
      */
     const clearAuthData = useCallback(() => {
-        localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_ID_KEY);
         localStorage.removeItem(USER_ROLE_KEY);
         localStorage.removeItem(COLLEGE_ID_KEY);
@@ -76,10 +46,9 @@ export function AuthProvider({ children }) {
     }, []);
 
     /**
-     * Store auth data in localStorage
+     * Store user data in localStorage
      */
-    const storeAuthData = useCallback((token, userData) => {
-        localStorage.setItem(TOKEN_KEY, token);
+    const storeUserData = useCallback((userData) => {
         if (userData.id) localStorage.setItem(USER_ID_KEY, userData.id.toString());
         if (userData.role) localStorage.setItem(USER_ROLE_KEY, userData.role);
         if (userData.collegeId) localStorage.setItem(COLLEGE_ID_KEY, userData.collegeId.toString());
@@ -87,36 +56,31 @@ export function AuthProvider({ children }) {
     }, []);
 
     /**
-     * Check authentication on mount
+     * Check authentication on mount by calling /me endpoint
      */
     useEffect(() => {
-        const checkAuth = () => {
+        const checkAuth = async () => {
             try {
-                const token = localStorage.getItem(TOKEN_KEY);
-                if (!token) {
-                    setUser(null);
-                    setIsLoading(false);
-                    return;
-                }
-
-                const parsedUser = parseJwt(token);
-                if (!parsedUser) {
-                    // Token invalid or expired - auto logout
-                    console.warn('Invalid or expired token, clearing auth data');
+                // Try to get current user from backend (uses httpOnly cookie)
+                const response = await apiGetCurrentUser();
+                if (response.success && response.data) {
+                    const userData = {
+                        id: response.data.userId,
+                        role: response.data.role,
+                        collegeId: response.data.collegeId,
+                        email: response.data.email || '',
+                        name: localStorage.getItem(USER_NAME_KEY) || response.data.email?.split('@')[0] || 'User',
+                    };
+                    setUser(userData);
+                    storeUserData(userData);
+                } else {
+                    // Not authenticated
                     clearAuthData();
                     setUser(null);
-                    setIsLoading(false);
-                    return;
                 }
-
-                // Restore additional user data from localStorage
-                const userName = localStorage.getItem(USER_NAME_KEY);
-                setUser({
-                    ...parsedUser,
-                    name: userName || parsedUser.email?.split('@')[0] || 'User',
-                });
             } catch (error) {
-                console.error('Auth check failed:', error);
+                // Not authenticated or error
+                console.debug('Auth check failed:', error.message);
                 clearAuthData();
                 setUser(null);
             } finally {
@@ -125,39 +89,33 @@ export function AuthProvider({ children }) {
         };
 
         checkAuth();
-    }, [clearAuthData]);
+    }, [clearAuthData, storeUserData]);
 
     /**
      * Login function
-     * Calls API, stores token, sets user state
+     * Calls API, stores user data, navigates to dashboard
      */
     const login = useCallback(async (email, password) => {
         try {
-            // Call API (authService only makes API calls, no localStorage)
+            // Call API - tokens are set as httpOnly cookies by server
             const response = await apiLogin(email, password);
 
             if (!response.success || !response.data) {
                 throw new Error(response.message || 'Login failed');
             }
 
-            const { token, userId, role, collegeId, redirectUrl } = response.data;
+            const { userId, role, collegeId, redirectUrl } = response.data;
 
-            // Parse token to get user info
-            const parsedUser = parseJwt(token);
-            if (!parsedUser) {
-                throw new Error('Invalid token received');
-            }
-
-            // Store auth data (AuthContext is the single source of truth)
+            // Store user data (not tokens - they're in httpOnly cookies)
             const userData = {
                 id: userId,
                 role: role,
                 collegeId: collegeId,
-                email: parsedUser.email,
-                name: parsedUser.email?.split('@')[0] || 'User',
+                email: email,
+                name: email?.split('@')[0] || 'User',
             };
 
-            storeAuthData(token, userData);
+            storeUserData(userData);
             setUser(userData);
 
             // Navigate to dashboard
@@ -167,18 +125,16 @@ export function AuthProvider({ children }) {
         } catch (error) {
             throw error;
         }
-    }, [router, storeAuthData]);
+    }, [router, storeUserData]);
 
     /**
      * Logout function
-     * Clears token, resets state, redirects to login
+     * Clears cookies (via API), resets state, redirects to login
      */
     const logout = useCallback(async () => {
         try {
-            // Get token before clearing (required for API call)
-            const token = localStorage.getItem(TOKEN_KEY);
-            // Call API logout (optional, for audit)
-            await apiLogout(token).catch(() => { });
+            // Call API logout - clears httpOnly cookies
+            await apiLogout().catch(() => { });
         } finally {
             clearAuthData();
             setUser(null);

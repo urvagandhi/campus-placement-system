@@ -9,11 +9,11 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080';
 
 /**
  * Login with email and password.
- * Returns API response - does NOT store token (AuthContext handles that).
+ * Returns API response - tokens are set as httpOnly cookies by the server.
  *
  * @param {string} email - User email
  * @param {string} password - User password
- * @returns {Promise<Object>} Response containing token, userId, role, collegeId, redirectUrl
+ * @returns {Promise<Object>} Response containing userId, role, collegeId, redirectUrl
  */
 export async function login(email, password) {
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
@@ -21,6 +21,7 @@ export async function login(email, password) {
         headers: {
             'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({ email, password }),
     });
 
@@ -30,7 +31,7 @@ export async function login(email, password) {
         throw new Error(data.message || 'Login failed');
     }
 
-    // Return data - AuthContext will handle token storage
+    // Return data - tokens are in httpOnly cookies, not accessible via JS
     return data;
 }
 
@@ -63,21 +64,18 @@ export async function register(userData) {
 
 /**
  * Logout the current user.
- * Called by AuthContext - does NOT clear localStorage here.
+ * Server clears httpOnly cookies.
  *
- * @param {string} token - Auth token for API call
  * @returns {Promise<void>}
  */
-export async function logout(token) {
-    if (!token) return;
-
+export async function logout() {
     try {
         await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
+            credentials: 'include', // Include cookies
         });
     } catch (error) {
         console.warn('Backend logout failed:', error);
@@ -86,22 +84,41 @@ export async function logout(token) {
 }
 
 /**
- * Get the current user info from the backend.
+ * Refresh the access token using the httpOnly cookie.
+ * Server handles the refresh token from the cookie.
  *
- * @param {string} token - Auth token
- * @returns {Promise<Object>} Current user details
+ * @returns {Promise<Object>} Response containing new tokens (in cookies)
  */
-export async function getCurrentUser(token) {
-    if (!token) {
-        throw new Error('Not authenticated');
+export async function refreshAccessToken() {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || 'Token refresh failed');
     }
 
+    return data;
+}
+
+/**
+ * Get the current user info from the backend.
+ *
+ * @returns {Promise<Object>} Current user details
+ */
+export async function getCurrentUser() {
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
         method: 'GET',
         headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies
     });
 
     const data = await response.json();
@@ -133,6 +150,7 @@ export default {
     login,
     register,
     logout,
+    refreshAccessToken,
     getCurrentUser,
     getRedirectUrlForRole,
 };

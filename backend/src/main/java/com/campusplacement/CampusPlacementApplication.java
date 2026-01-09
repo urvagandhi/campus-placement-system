@@ -2,6 +2,7 @@ package com.campusplacement;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Main entry point for the AI-Assisted Campus Placement System.
@@ -29,6 +30,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @version 1.0.0
  */
 @SpringBootApplication
+@EnableScheduling
 public class CampusPlacementApplication {
 
     public static void main(String[] args) {

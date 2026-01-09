@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.campusplacement.auth.exception.AccountDeactivatedException;
 import com.campusplacement.auth.exception.AuthenticationException;
 import com.campusplacement.auth.exception.CollegeInactiveException;
+import com.campusplacement.auth.exception.RefreshTokenException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  * Maps exceptions to appropriate HTTP status codes:
  * <ul>
  * <li>AuthenticationException → 401 Unauthorized</li>
+ * <li>RefreshTokenException → 401 Unauthorized</li>
  * <li>AccountDeactivatedException → 403 Forbidden</li>
  * <li>CollegeInactiveException → 404 Not Found</li>
  * <li>AccessDeniedException → 403 Forbidden</li>
@@ -50,6 +52,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.error("Invalid credentials"));
+    }
+
+    @ExceptionHandler(RefreshTokenException.class)
+    public ResponseEntity<ApiResponse<Void>> handleRefreshTokenException(RefreshTokenException ex) {
+        log.warn("Refresh token error: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(ex.getMessage()));
     }
 
     @ExceptionHandler(AccountDeactivatedException.class)
