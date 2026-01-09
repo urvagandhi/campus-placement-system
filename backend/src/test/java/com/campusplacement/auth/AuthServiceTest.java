@@ -23,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.campusplacement.auth.dto.LoginRequestDTO;
 import com.campusplacement.auth.dto.LoginResponseDTO;
+import com.campusplacement.auth.dto.RegisterRequestDTO;
 import com.campusplacement.auth.exception.AccountDeactivatedException;
 import com.campusplacement.auth.exception.AuthenticationException;
 import com.campusplacement.auth.exception.CollegeInactiveException;
@@ -299,7 +300,8 @@ class AuthServiceTest {
                 // Assert - verify audit was saved with success=true
                 verify(loginAuditRepository).save(argThat(audit -> audit.getSuccess() &&
                                 audit.getUserId().equals(testUser.getId()) &&
-                                audit.getEmail().equals("student@test.edu")));
+                                audit.getEmail().equals("student@test.edu") &&
+                                audit.getEventType() == SecurityAuditEventType.LOGIN));
         }
 
         @SuppressWarnings("null")
@@ -317,10 +319,11 @@ class AuthServiceTest {
                 // Act & Assert
                 assertThrows(AuthenticationException.class, () -> authService.login(loginRequest));
 
-                // Verify audit was saved with success=false and correct userId
+                // Verify audit was saved with success=false, correct userId and event type
                 verify(loginAuditRepository).save(argThat(audit -> !audit.getSuccess() &&
                                 audit.getUserId().equals(testUser.getId()) &&
-                                audit.getEmail().equals("student@test.edu")));
+                                audit.getEmail().equals("student@test.edu") &&
+                                audit.getEventType() == SecurityAuditEventType.LOGIN));
         }
 
         @SuppressWarnings("null")
@@ -339,7 +342,8 @@ class AuthServiceTest {
                 // Verify audit was saved with null userId (unknown user)
                 verify(loginAuditRepository).save(argThat(audit -> !audit.getSuccess() &&
                                 audit.getUserId() == null &&
-                                audit.getEmail().equals("unknown@test.edu")));
+                                audit.getEmail().equals("unknown@test.edu") &&
+                                audit.getEventType() == SecurityAuditEventType.LOGIN));
         }
 
         @Test
@@ -403,5 +407,22 @@ class AuthServiceTest {
 
                 // Act & Assert
                 assertThrows(CollegeInactiveException.class, () -> authService.login(loginRequest));
+        }
+
+        @Test
+        @DisplayName("Register with password mismatch throws IllegalArgumentException")
+        void testRegister_PasswordMismatch_ThrowsIllegalArgumentException() {
+                // Arrange
+                RegisterRequestDTO registerRequest = RegisterRequestDTO.builder()
+                                .name("New User")
+                                .email("new@test.edu")
+                                .password("password123")
+                                .confirmPassword("passwordMismatch")
+                                .build();
+
+                // Act & Assert
+                Exception exception = assertThrows(IllegalArgumentException.class,
+                                () -> authService.register(registerRequest));
+                assertEquals("Passwords do not match", exception.getMessage());
         }
 }

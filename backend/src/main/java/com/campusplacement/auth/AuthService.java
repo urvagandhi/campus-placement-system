@@ -81,19 +81,19 @@ public class AuthService {
         User user = userRepository.findByEmailWithCollege(email)
                 .orElseThrow(() -> {
                     // Audit failed login for unknown email
-                    auditLogin(null, email, false);
+                    auditLogin(null, email, false, SecurityAuditEventType.LOGIN);
                     return new AuthenticationException("Invalid credentials");
                 });
 
         // 2. Verify password
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            auditLogin(user.getId(), email, false);
+            auditLogin(user.getId(), email, false, SecurityAuditEventType.LOGIN);
             throw new AuthenticationException("Invalid credentials");
         }
 
         // 3. Check user is active
         if (user.getIsActive() == null || !user.getIsActive()) {
-            auditLogin(user.getId(), email, false);
+            auditLogin(user.getId(), email, false, SecurityAuditEventType.LOGIN);
             throw new AccountDeactivatedException("Account is deactivated. Please contact administrator.");
         }
 
@@ -104,7 +104,7 @@ public class AuthService {
                 throw new CollegeInactiveException("User is not associated with any college");
             }
             if (college.getIsActive() == null || !college.getIsActive()) {
-                auditLogin(user.getId(), email, false);
+                auditLogin(user.getId(), email, false, SecurityAuditEventType.LOGIN);
                 throw new CollegeInactiveException("College is not active. Please contact administrator.");
             }
         }
@@ -118,7 +118,7 @@ public class AuthService {
         // 7. Update last login & audit
         user.setLastLogin(LocalDateTime.now());
         userRepository.save(user);
-        auditLogin(user.getId(), email, true);
+        auditLogin(user.getId(), email, true, SecurityAuditEventType.LOGIN);
 
         log.info("User {} logged in successfully with role {}", email, user.getRole());
 
@@ -141,6 +141,11 @@ public class AuthService {
     @SuppressWarnings("null")
     @Transactional
     public void register(RegisterRequestDTO request) {
+        // Validate password match
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("Passwords do not match");
+        }
+
         String email = request.getEmail().toLowerCase().trim();
 
         // Check if email already exists
@@ -158,6 +163,7 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
+        auditLogin(user.getId(), email, true, SecurityAuditEventType.REGISTER);
         log.info("New user registered: {}", email);
     }
 
@@ -228,11 +234,12 @@ public class AuthService {
      * @param success whether the login was successful
      */
     @SuppressWarnings("null")
-    private void auditLogin(Long userId, String email, boolean success) {
+    private void auditLogin(Long userId, String email, boolean success, SecurityAuditEventType eventType) {
         try {
             LoginAudit audit = LoginAudit.builder()
                     .userId(userId)
                     .email(email)
+                    .eventType(eventType)
                     .loginTime(LocalDateTime.now())
                     .ipAddress(getClientIpAddress())
                     .userAgent(httpServletRequest.getHeader("User-Agent"))

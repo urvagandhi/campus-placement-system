@@ -18,7 +18,9 @@ import lombok.Setter;
  * Entity representing a student's application to a placement drive.
  */
 @Entity
-@Table(name = "applications")
+@Table(name = "applications", uniqueConstraints = {
+        @jakarta.persistence.UniqueConstraint(columnNames = { "student_id", "drive_id" })
+})
 @Getter
 @Setter
 @NoArgsConstructor

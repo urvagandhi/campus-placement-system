@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -54,6 +55,11 @@ public class LoginAudit {
 
     @Column(name = "user_agent")
     private String userAgent;
+
+    @Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "event_type", nullable = false)
+    @Builder.Default
+    private SecurityAuditEventType eventType = SecurityAuditEventType.LOGIN;
 
     @Column(name = "success", nullable = false)
     private Boolean success;

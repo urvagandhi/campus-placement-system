@@ -34,9 +34,4 @@ public class RegisterRequestDTO {
     @NotBlank(message = "Confirm password is required")
     private String confirmPassword;
 
-    /**
-     * Role for the new user. Defaults to STUDENT if not specified.
-     * Only admins can specify roles other than STUDENT.
-     */
-    private String role;
 }

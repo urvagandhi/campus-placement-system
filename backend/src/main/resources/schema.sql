@@ -70,9 +70,8 @@ CREATE TABLE IF NOT EXISTS organization_units (
     updated_at TIMESTAMP,
 
     CONSTRAINT chk_org_hierarchy_valid CHECK (
-        (type = 'UNIVERSITY' AND parent_id IS NULL) OR
-        (type = 'INSTITUTE' AND parent_id IS NOT NULL) OR
-        (type = 'DEPARTMENT' AND parent_id IS NOT NULL)
+        (type = 'UNIVERSITY' AND is_root = true AND parent_id IS NULL) OR
+        (type IN ('INSTITUTE', 'DEPARTMENT') AND is_root = false AND parent_id IS NOT NULL)
     )
 );;
 CREATE INDEX IF NOT EXISTS idx_org_units_college ON organization_units(college_id);;
@@ -133,6 +132,7 @@ CREATE TABLE IF NOT EXISTS login_audit (
     login_time TIMESTAMP NOT NULL DEFAULT NOW(),
     ip_address VARCHAR(50),
     user_agent VARCHAR(500),
+    event_type VARCHAR(50) NOT NULL DEFAULT 'LOGIN',
     success BOOLEAN NOT NULL
 );;
 CREATE INDEX IF NOT EXISTS idx_audit_user ON login_audit(user_id);;
@@ -176,3 +176,46 @@ SELECT descendants.id, descendants.name, descendants.type, descendants.level
 FROM descendants
 ORDER BY level;
 $$ LANGUAGE SQL;;
+
+-- 3.6 student_profiles
+CREATE TABLE IF NOT EXISTS student_profiles (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    enrollment_no VARCHAR(50) UNIQUE NOT NULL,
+    department VARCHAR(255) NOT NULL, -- Deprecated
+    department_id BIGINT REFERENCES organization_units(id) ON DELETE SET NULL,
+    cgpa DOUBLE PRECISION,
+    skills TEXT,
+    resume_url VARCHAR(500),
+    batch_year INT,
+    semester VARCHAR(20),
+    projects_count INT DEFAULT 0,
+    internship_months INT DEFAULT 0,
+    certifications TEXT,
+    linkedin_url VARCHAR(500),
+    github_url VARCHAR(500),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP
+);;
+CREATE INDEX IF NOT EXISTS idx_student_user ON student_profiles(user_id);;
+CREATE INDEX IF NOT EXISTS idx_student_dept ON student_profiles(department_id);;
+
+-- 3.7 applications
+CREATE TABLE IF NOT EXISTS applications (
+    id BIGSERIAL PRIMARY KEY,
+    student_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    drive_id BIGINT NOT NULL, -- FK to placement_drives (assuming table exists or will exist)
+    status VARCHAR(50) DEFAULT 'PENDING',
+    applied_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    notes TEXT,
+    resume_snapshot_url VARCHAR(500),
+    shortlisted_at TIMESTAMP,
+    selected_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP,
+
+    CONSTRAINT uq_application_student_drive UNIQUE(student_id, drive_id)
+);;
+CREATE INDEX IF NOT EXISTS idx_application_student ON applications(student_id);;
+CREATE INDEX IF NOT EXISTS idx_application_drive ON applications(drive_id);;
+CREATE INDEX IF NOT EXISTS idx_application_status ON applications(status);;
