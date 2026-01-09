@@ -55,6 +55,13 @@ public class CustomUserDetails implements UserDetails {
                 .orElse(null);
     }
 
+    /**
+     * Gets the user ID (alias for getId for cleaner service code).
+     */
+    public Long getUserId() {
+        return id;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return authorities;

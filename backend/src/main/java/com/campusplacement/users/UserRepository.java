@@ -31,8 +31,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     /**
      * Finds a user by email, including SUPER_ADMIN (college is null).
+     * Email comparison is case-insensitive.
      */
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.college WHERE u.email = :email")
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.college WHERE LOWER(u.email) = LOWER(:email)")
     Optional<User> findByEmailWithCollege(@Param("email") String email);
 
     /**
