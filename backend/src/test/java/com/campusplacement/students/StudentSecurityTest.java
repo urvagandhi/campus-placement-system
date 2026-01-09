@@ -24,7 +24,7 @@ import com.campusplacement.organizations.OrganizationUnitRepository;
 import com.campusplacement.security.JwtTokenProvider;
 import com.campusplacement.users.User;
 import com.campusplacement.users.UserRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+// import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Integration tests for Student role security enforcement.
@@ -64,8 +64,8 @@ class StudentSecurityTest extends AbstractIntegrationTest {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    // @Autowired
+    // private ObjectMapper objectMapper;
 
     private College testCollege;
     private OrganizationUnit department;

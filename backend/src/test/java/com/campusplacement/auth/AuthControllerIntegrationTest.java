@@ -26,7 +26,7 @@ import com.campusplacement.common.UserRole;
 import com.campusplacement.security.JwtTokenProvider;
 import com.campusplacement.users.User;
 import com.campusplacement.users.UserRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+// import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Integration tests for AuthController using MockMvc.
@@ -48,8 +48,8 @@ class AuthControllerIntegrationTest extends AbstractIntegrationTest {
         @Autowired
         private MockMvc mockMvc;
 
-        @Autowired
-        private ObjectMapper objectMapper;
+        // @Autowired
+        // private ObjectMapper objectMapper;
 
         @Autowired
         private UserRepository userRepository;

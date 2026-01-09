@@ -45,136 +45,162 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
-    private final CookieUtils cookieUtils;
+        private final AuthService authService;
+        private final CookieUtils cookieUtils;
 
-    @Value("${app.jwt.access-expiration-ms:900000}")
-    private long accessExpirationMs;
+        @Value("${app.jwt.access-expiration-ms:900000}")
+        private long accessExpirationMs;
 
-    @Value("${app.jwt.refresh-expiration-days:7}")
-    private int refreshExpirationDays;
+        @Value("${app.jwt.refresh-expiration-days:7}")
+        private int refreshExpirationDays;
 
-    /**
-     * Authenticates a user and returns a JWT token.
-     *
-     * <p>
-     * Response includes:
-     * <ul>
-     * <li>token - JWT access token</li>
-     * <li>refreshToken - Refresh token for obtaining new access tokens</li>
-     * <li>expiresIn - Access token expiration time in milliseconds</li>
-     * <li>userId - User's database ID</li>
-     * <li>role - User's role (STUDENT, COORDINATOR, ADMIN, SUPER_ADMIN)</li>
-     * <li>collegeId - User's college ID (null for SUPER_ADMIN)</li>
-     * <li>redirectUrl - Role-based dashboard URL</li>
-     * </ul>
-     * </p>
-     *
-     * @param request login credentials (email + password)
-     * @return JWT token and user details
-     */
-    @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponseDTO>> login(
-            @Valid @RequestBody LoginRequestDTO request,
-            HttpServletResponse httpResponse) {
-        LoginResponseDTO response = authService.login(request);
+        /**
+         * Authenticates a user and returns a JWT token.
+         *
+         * <p>
+         * Response includes:
+         * <ul>
+         * <li>token - JWT access token</li>
+         * <li>refreshToken - Refresh token for obtaining new access tokens</li>
+         * <li>expiresIn - Access token expiration time in milliseconds</li>
+         * <li>userId - User's database ID</li>
+         * <li>role - User's role (STUDENT, COORDINATOR, ADMIN, SUPER_ADMIN)</li>
+         * <li>collegeId - User's college ID (null for SUPER_ADMIN)</li>
+         * <li>redirectUrl - Role-based dashboard URL</li>
+         * </ul>
+         * </p>
+         *
+         * @param request login credentials (email + password)
+         * @return JWT token and user details
+         */
+        @PostMapping("/login")
+        public ResponseEntity<ApiResponse<LoginResponseDTO>> login(
+                        @Valid @RequestBody LoginRequestDTO request,
+                        HttpServletResponse httpResponse) {
+                LoginResponseDTO response = authService.login(request);
 
-        // Set httpOnly cookies for tokens
-        long accessMaxAgeSec = accessExpirationMs / 1000;
-        long refreshMaxAgeSec = refreshExpirationDays * 24 * 60 * 60L;
+                // Set httpOnly cookies for tokens
+                long accessMaxAgeSec = accessExpirationMs / 1000;
+                long refreshMaxAgeSec = refreshExpirationDays * 24 * 60 * 60L;
 
-        cookieUtils.addCookie(httpResponse,
-                cookieUtils.createAccessTokenCookie(response.getToken(), accessMaxAgeSec));
-        cookieUtils.addCookie(httpResponse,
-                cookieUtils.createRefreshTokenCookie(response.getRefreshToken(), refreshMaxAgeSec));
+                cookieUtils.addCookie(httpResponse,
+                                cookieUtils.createAccessTokenCookie(response.getToken(), accessMaxAgeSec));
+                cookieUtils.addCookie(httpResponse,
+                                cookieUtils.createRefreshTokenCookie(response.getRefreshToken(), refreshMaxAgeSec));
 
-        return ResponseEntity.ok(ApiResponse.success(response, "Login successful"));
-    }
-
-    /**
-     * Refreshes the access token using a valid refresh token.
-     *
-     * <p>
-     * This endpoint:
-     * <ul>
-     * <li>Validates the refresh token</li>
-     * <li>Rotates the refresh token (old one is invalidated)</li>
-     * <li>Returns new access and refresh tokens</li>
-     * </ul>
-     * </p>
-     *
-     * @param request the refresh token
-     * @return new access token and rotated refresh token
-     */
-    @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<TokenRefreshResponseDTO>> refreshToken(
-            @RequestBody(required = false) TokenRefreshRequestDTO request,
-            HttpServletRequest httpRequest,
-            HttpServletResponse httpResponse) {
-        // Get refresh token from cookie if not in body
-        String refreshToken = (request != null && request.getRefreshToken() != null)
-                ? request.getRefreshToken()
-                : cookieUtils.getRefreshTokenFromCookies(httpRequest);
-
-        if (refreshToken == null || refreshToken.isEmpty()) {
-            throw new com.campusplacement.auth.exception.RefreshTokenException("Refresh token is required");
+                return ResponseEntity.ok(ApiResponse.success(response, "Login successful"));
         }
 
-        TokenRefreshRequestDTO refreshRequest = TokenRefreshRequestDTO.builder()
-                .refreshToken(refreshToken)
-                .build();
+        /**
+         * Refreshes the access token using a valid refresh token.
+         *
+         * <p>
+         * This endpoint:
+         * <ul>
+         * <li>Validates the refresh token</li>
+         * <li>Rotates the refresh token (old one is invalidated)</li>
+         * <li>Returns new access and refresh tokens</li>
+         * </ul>
+         * </p>
+         *
+         * @param request the refresh token
+         * @return new access token and rotated refresh token
+         */
+        @PostMapping("/refresh")
+        public ResponseEntity<ApiResponse<TokenRefreshResponseDTO>> refreshToken(
+                        @RequestBody(required = false) TokenRefreshRequestDTO request,
+                        HttpServletRequest httpRequest,
+                        HttpServletResponse httpResponse) {
+                // Get refresh token from cookie if not in body
+                String refreshToken = (request != null && request.getRefreshToken() != null)
+                                ? request.getRefreshToken()
+                                : cookieUtils.getRefreshTokenFromCookies(httpRequest);
 
-        TokenRefreshResponseDTO response = authService.refreshToken(refreshRequest);
+                if (refreshToken == null || refreshToken.isEmpty()) {
+                        throw new com.campusplacement.auth.exception.RefreshTokenException("Refresh token is required");
+                }
 
-        // Set new cookies
-        long accessMaxAgeSec = accessExpirationMs / 1000;
-        long refreshMaxAgeSec = refreshExpirationDays * 24 * 60 * 60L;
+                TokenRefreshRequestDTO refreshRequest = TokenRefreshRequestDTO.builder()
+                                .refreshToken(refreshToken)
+                                .build();
 
-        cookieUtils.addCookie(httpResponse,
-                cookieUtils.createAccessTokenCookie(response.getAccessToken(), accessMaxAgeSec));
-        cookieUtils.addCookie(httpResponse,
-                cookieUtils.createRefreshTokenCookie(response.getRefreshToken(), refreshMaxAgeSec));
+                TokenRefreshResponseDTO response = authService.refreshToken(refreshRequest);
 
-        return ResponseEntity.ok(ApiResponse.success(response, "Token refreshed successfully"));
-    }
+                // Set new cookies
+                long accessMaxAgeSec = accessExpirationMs / 1000;
+                long refreshMaxAgeSec = refreshExpirationDays * 24 * 60 * 60L;
 
-    /**
-     * Logs out the current user.
-     *
-     * <p>
-     * Revokes the provided refresh token and clears the security context.
-     * </p>
-     *
-     * @param request optional refresh token to revoke
-     * @return success message
-     */
-    @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<String>> logout(
-            @RequestBody(required = false) TokenRefreshRequestDTO request,
-            HttpServletRequest httpRequest,
-            HttpServletResponse httpResponse) {
-        // Get refresh token from cookie if not in body
-        String refreshToken = (request != null && request.getRefreshToken() != null)
-                ? request.getRefreshToken()
-                : cookieUtils.getRefreshTokenFromCookies(httpRequest);
+                cookieUtils.addCookie(httpResponse,
+                                cookieUtils.createAccessTokenCookie(response.getAccessToken(), accessMaxAgeSec));
+                cookieUtils.addCookie(httpResponse,
+                                cookieUtils.createRefreshTokenCookie(response.getRefreshToken(), refreshMaxAgeSec));
 
-        authService.logout(refreshToken);
+                return ResponseEntity.ok(ApiResponse.success(response, "Token refreshed successfully"));
+        }
 
-        // Clear cookies
-        cookieUtils.addCookie(httpResponse, cookieUtils.createAccessTokenClearCookie());
-        cookieUtils.addCookie(httpResponse, cookieUtils.createRefreshTokenClearCookie());
+        /**
+         * Logs out the current user.
+         *
+         * <p>
+         * Revokes the provided refresh token and clears the security context.
+         * </p>
+         *
+         * @param request optional refresh token to revoke
+         * @return success message
+         */
+        @PostMapping("/logout")
+        public ResponseEntity<ApiResponse<String>> logout(
+                        @RequestBody(required = false) TokenRefreshRequestDTO request,
+                        HttpServletRequest httpRequest,
+                        HttpServletResponse httpResponse) {
+                // Get refresh token from cookie if not in body
+                String refreshToken = (request != null && request.getRefreshToken() != null)
+                                ? request.getRefreshToken()
+                                : cookieUtils.getRefreshTokenFromCookies(httpRequest);
 
-        return ResponseEntity.ok(ApiResponse.success("Logout successful"));
-    }
+                authService.logout(refreshToken);
 
-    /**
-     * Returns the current authenticated user's information.
-     *
-     * @return current user details
-     */
-    @GetMapping("/me")
-    public ResponseEntity<ApiResponse<LoginResponseDTO>> getCurrentUser() {
-        LoginResponseDTO user = authService.getCurrentUser();
-        return ResponseEntity.ok(ApiResponse.success(user));
-    }
+                // Clear cookies
+                cookieUtils.addCookie(httpResponse, cookieUtils.createAccessTokenClearCookie());
+                cookieUtils.addCookie(httpResponse, cookieUtils.createRefreshTokenClearCookie());
+
+                return ResponseEntity.ok(ApiResponse.success("Logout successful"));
+        }
+
+        /**
+         * Returns the current authenticated user's information.
+         *
+         * @return current user details
+         */
+        @GetMapping("/me")
+        public ResponseEntity<ApiResponse<LoginResponseDTO>> getCurrentUser() {
+                LoginResponseDTO user = authService.getCurrentUser();
+                return ResponseEntity.ok(ApiResponse.success(user));
+        }
+
+        /**
+         * Retrieves all active sessions for the current user.
+         *
+         * @return list of active sessions
+         */
+        @GetMapping("/sessions")
+        public ResponseEntity<ApiResponse<java.util.List<com.campusplacement.auth.dto.ActiveSessionDTO>>> getActiveSessions() {
+                return ResponseEntity.ok(ApiResponse.success(authService.getActiveSessions()));
+        }
+
+        /**
+         * Revokes a specific session.
+         *
+         * @param sessionId the session/token ID to revoke
+         * @return success message
+         */
+        @PostMapping("/sessions/revoke")
+        public ResponseEntity<ApiResponse<String>> revokeSession(@RequestBody java.util.Map<String, Long> request) {
+                Long sessionId = request.get("id");
+                if (sessionId == null) {
+                        return ResponseEntity.badRequest().body(ApiResponse.error("Session ID is required"));
+                }
+                authService.revokeSession(sessionId);
+                return ResponseEntity.ok(ApiResponse.success("Session revoked successfully"));
+        }
 }

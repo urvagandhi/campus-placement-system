@@ -64,6 +64,9 @@ public class LoginAudit {
     @Column(name = "success", nullable = false)
     private Boolean success;
 
+    @Column(name = "failure_reason")
+    private String failureReason;
+
     @PrePersist
     protected void onCreate() {
         if (loginTime == null) {

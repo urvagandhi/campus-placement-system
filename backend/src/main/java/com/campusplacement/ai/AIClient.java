@@ -13,6 +13,8 @@ import org.springframework.web.client.RestTemplate;
 import com.campusplacement.ai.dto.EligibilityRequestDTO;
 import com.campusplacement.ai.dto.SkillGapRequestDTO;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,6 +53,8 @@ public class AIClient {
      * @return AI response with eligibility score
      */
     @SuppressWarnings("null")
+    @CircuitBreaker(name = "aiService", fallbackMethod = "fallbackEligibilityScore")
+    @Retry(name = "aiService")
     public AIResponseDTO calculateEligibilityScore(EligibilityRequestDTO request) {
         // TODO: Implement HTTP call to AI service
         // POST {aiServiceBaseUrl}/eligibility/score
@@ -72,6 +76,21 @@ public class AIClient {
             log.error("Error calling AI service: {}", e.getMessage());
             throw new RuntimeException("AI service unavailable", e);
         }
+    }
+
+    /**
+     * Fallback for eligibility score when AI service is down or circuit is open.
+     */
+    public AIResponseDTO fallbackEligibilityScore(EligibilityRequestDTO request, Exception e) {
+        log.warn("AI Service fallback triggered for student {}. Reason: {}", request.getStudentId(), e.getMessage());
+        return AIResponseDTO.builder()
+                .success(true) // Fallback succeeded
+                .score(50.0) // Neutral score
+                .isEligible(true) // Be permissive in fallback
+                .reasons(java.util.Collections.singletonList("AI service call failed: " + e.getMessage()))
+                .recommendations(java.util.Collections
+                        .singletonList("Manual review recommended due to temporary AI service unavailability."))
+                .build();
     }
 
     /**

@@ -79,6 +79,12 @@ public class JwtTokenProvider {
     @Value("${app.jwt.secret}")
     private String jwtSecret;
 
+    @Value("${app.jwt.issuer:PlacementPro}")
+    private String jwtIssuer;
+
+    @Value("${app.jwt.audience:PlacementPro-App}")
+    private String jwtAudience;
+
     @Value("${app.jwt.access-expiration-ms:900000}")
     private long accessExpirationMs;
 
@@ -111,10 +117,13 @@ public class JwtTokenProvider {
 
         var builder = Jwts.builder()
                 .subject(user.getEmail())
-                .claim("ver", TOKEN_VERSION) // IMPROVEMENT #4: Token versioning
+                .issuer(jwtIssuer)
+                .audience().add(jwtAudience).and()
+                .claim("ver", TOKEN_VERSION)
                 .claim("uid", user.getId())
                 .claim("role", user.getRole().name())
                 .issuedAt(now)
+                .notBefore(now) // Token not valid before current time
                 .expiration(expiryDate)
                 .signWith(getSigningKey());
 
@@ -141,6 +150,8 @@ public class JwtTokenProvider {
         try {
             Jwts.parser()
                     .verifyWith(getSigningKey())
+                    .requireIssuer(jwtIssuer)
+                    .requireAudience(jwtAudience)
                     .build()
                     .parseSignedClaims(token);
             return true;

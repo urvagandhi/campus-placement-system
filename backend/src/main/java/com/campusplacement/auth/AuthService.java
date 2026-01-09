@@ -17,6 +17,7 @@ import com.campusplacement.auth.exception.AccountDeactivatedException;
 import com.campusplacement.auth.exception.AuthenticationException;
 import com.campusplacement.auth.exception.CollegeInactiveException;
 import com.campusplacement.colleges.College;
+import com.campusplacement.common.CookieUtils;
 import com.campusplacement.common.UserRole;
 import com.campusplacement.security.CustomUserDetails;
 import com.campusplacement.security.JwtTokenProvider;
@@ -53,6 +54,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final HttpServletRequest httpServletRequest;
+    private final CookieUtils cookieUtils;
 
     /**
      * Authenticates a user and generates a JWT token.
@@ -78,6 +80,13 @@ public class AuthService {
      */
     @Transactional
     public LoginResponseDTO login(LoginRequestDTO request) {
+        // 0. HONEYPOT CHECK (Anti-Automation)
+        if (request.getUsername() != null && !request.getUsername().isEmpty()) {
+            log.warn("BOT DETECTED: Honeypot field filled by robot! IP: {}", getClientIpAddress());
+            // Fail silently with generic error to not expose we know it's a bot
+            throw new AuthenticationException("Invalid credentials");
+        }
+
         String email = request.getEmail().toLowerCase().trim();
 
         // 1. Find user by email (with college eager fetch)
@@ -214,6 +223,41 @@ public class AuthService {
     @Transactional
     public int logoutAllDevices(Long userId) {
         return refreshTokenService.revokeAllUserTokens(userId);
+    }
+
+    /**
+     * Retrieves all active sessions for the current authenticated user.
+     *
+     * @return list of active sessions
+     */
+    @Transactional(readOnly = true)
+    public java.util.List<com.campusplacement.auth.dto.ActiveSessionDTO> getActiveSessions() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
+            throw new AuthenticationException("Not authenticated");
+        }
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        // Get current refresh token from cookie to identify "current" session
+        String currentRefreshToken = cookieUtils.getRefreshTokenFromCookies(httpServletRequest);
+
+        return refreshTokenService.getActiveSessions(userDetails.getId(), currentRefreshToken);
+    }
+
+    /**
+     * Revokes a specific session for the current user.
+     *
+     * @param sessionId the session/token ID to revoke
+     */
+    @Transactional
+    public void revokeSession(Long sessionId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails)) {
+            throw new AuthenticationException("Not authenticated");
+        }
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        refreshTokenService.revokeSession(sessionId, userDetails.getId());
     }
 
     /**

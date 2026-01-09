@@ -14,6 +14,7 @@ export default function LoginPage() {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
+        username: '', // Honeypot field
     });
 
     const [error, setError] = useState('');
@@ -40,8 +41,8 @@ export default function LoginPage() {
         }
 
         try {
-            // Use AuthContext login (handles token storage and redirect)
-            await login(formData.email, formData.password);
+            // Use AuthContext login (pass honeypot field)
+            await login(formData.email, formData.password, formData.username);
         } catch (err) {
             // Handle specific error cases
             if (err.message.includes('credentials')) {
@@ -97,6 +98,17 @@ export default function LoginPage() {
                             </div>
 
                             <div className="space-y-4">
+                                {/* Honeypot field - hidden from humans */}
+                                <div className="hidden" aria-hidden="true">
+                                    <input
+                                        type="text"
+                                        name="username"
+                                        autoComplete="off"
+                                        tabIndex="-1"
+                                        value={formData.username}
+                                        onChange={handleChange}
+                                    />
+                                </div>
                                 <Input
                                     label="Email"
                                     name="email"

@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -63,7 +64,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
 
                 // Enable CORS
-                .cors(cors -> cors.configure(http))
+                .cors(Customizer.withDefaults())
 
                 // Stateless session management
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -87,7 +88,32 @@ public class SecurityConfig {
 
                 // Add JWT filter before UsernamePasswordAuthenticationFilter
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // Add Security Headers
+                .headers(headers -> headers
+                        // Content Security Policy
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives("default-src 'self'; " +
+                                        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                                        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                                        "img-src 'self' data: https://*.tile.openstreetmap.org https://*.tile.osm.org; "
+                                        +
+                                        "font-src 'self' https://fonts.gstatic.com data:; " +
+                                        "connect-src 'self' http://localhost:8080 http://localhost:3000; " +
+                                        "frame-ancestors 'none'; " +
+                                        "upgrade-insecure-requests;"))
+                        // X-Frame-Options: DENY
+                        .frameOptions(frame -> frame.deny())
+                        // X-Content-Type-Options: nosniff
+                        .contentTypeOptions(Customizer.withDefaults())
+                        // Referrer-Policy: strict-origin-when-cross-origin
+                        .referrerPolicy(referrer -> referrer.policy(
+                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        // Strict-Transport-Security: max-age=31536000; includeSubDomains
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000)));
 
         return http.build();
     }

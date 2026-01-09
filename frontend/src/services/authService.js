@@ -5,6 +5,8 @@
  * Token storage and lifecycle are managed exclusively by AuthContext.
  */
 
+import { fetchWithRetry as fetch } from '@/utils/fetchUtils';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080';
 
 /**
@@ -15,14 +17,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080';
  * @param {string} password - User password
  * @returns {Promise<Object>} Response containing userId, role, collegeId, redirectUrl
  */
-export async function login(email, password) {
+export async function login(email, password, honeypot) {
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         credentials: 'include', // Include cookies
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, username: honeypot }),
     });
 
     const data = await response.json();
@@ -131,6 +133,102 @@ export async function getCurrentUser() {
 }
 
 /**
+ * Get all active sessions for the current user.
+ *
+ * @returns {Promise<Array>} List of active sessions
+ */
+export async function getActiveSessions() {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/sessions`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || 'Failed to get sessions');
+    }
+
+    return data.data; // Return the sessions array
+}
+
+/**
+ * Revoke a specific session.
+ *
+ * @param {number} sessionId - ID of the session to revoke
+ * @returns {Promise<Object>} Success response
+ */
+export async function revokeSession(sessionId) {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/sessions/revoke`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ id: sessionId }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || 'Failed to revoke session');
+    }
+
+    return data;
+}
+
+/**
+ * Get security dashboard statistics.
+ *
+ * @returns {Promise<Object>} Security stats
+ */
+export async function getSecurityStats() {
+    const response = await fetch(`${API_BASE_URL}/api/v1/security/stats`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || 'Failed to get security stats');
+    }
+
+    return data.data;
+}
+
+/**
+ * Export audit logs as CSV.
+ * Directly triggers a browser download.
+ */
+export async function exportAuditLogs() {
+    const response = await fetch(`${API_BASE_URL}/api/v1/security/export`, {
+        method: 'GET',
+        credentials: 'include',
+    });
+
+    if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to export logs');
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `security_audit_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+/**
  * Get redirect URL based on role.
  *
  * @param {string} role - User role
@@ -142,6 +240,7 @@ export function getRedirectUrlForRole(role) {
         'COORDINATOR': '/dashboard/coordinator',
         'ADMIN': '/dashboard/admin',
         'SUPER_ADMIN': '/dashboard/superadmin',
+        'SECURITY_OFFICER': '/dashboard/admin/security', // Added for completeness
     };
     return roleRoutes[role] || '/dashboard/student';
 }
@@ -153,4 +252,8 @@ export default {
     refreshAccessToken,
     getCurrentUser,
     getRedirectUrlForRole,
+    getActiveSessions,
+    revokeSession,
+    getSecurityStats,
+    exportAuditLogs,
 };

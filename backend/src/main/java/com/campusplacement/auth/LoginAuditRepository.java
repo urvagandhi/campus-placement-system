@@ -70,4 +70,20 @@ public interface LoginAuditRepository extends JpaRepository<LoginAudit, Long> {
      */
     @Query("SELECT COUNT(la) FROM LoginAudit la WHERE la.loginTime < :before")
     long countOlderThan(@Param("before") LocalDateTime before);
+
+    /**
+     * Count events by type within a time range.
+     */
+    long countByEventTypeAndLoginTimeAfter(SecurityAuditEventType eventType, LocalDateTime since);
+
+    /**
+     * Count successful or failed attempts within a time range.
+     */
+    long countBySuccessAndLoginTimeAfter(Boolean success, LocalDateTime since);
+
+    /**
+     * Find latest anomalies (failed attempts or security alerts).
+     */
+    @Query("SELECT la FROM LoginAudit la WHERE la.success = false OR la.eventType IN ('TOKEN_REUSE_DETECTED', 'UNAUTHORIZED_DEVICE', 'ACCOUNT_LOCKED') ORDER BY la.loginTime DESC")
+    List<LoginAudit> findLatestAnomalies(org.springframework.data.domain.Pageable pageable);
 }

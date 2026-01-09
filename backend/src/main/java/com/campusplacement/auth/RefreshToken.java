@@ -104,12 +104,48 @@ public class RefreshToken {
     @Column(name = "user_agent", length = 512)
     private String userAgent;
 
+    /**
+     * Cryptographic fingerprint of the device (UA + IP hash).
+     * Used for token binding to a specific device.
+     */
+    @Column(name = "device_fingerprint", length = 64)
+    private String deviceFingerprint;
+
+    /**
+     * ID of the token family (root token ID).
+     * All tokens in a rotation chain share the same family ID.
+     */
+    @Column(name = "family_id", length = 36)
+    private String familyId;
+
+    /**
+     * The token that was used to generate this token.
+     * Used to trace the rotation chain and detect reuse.
+     */
+    @Column(name = "parent_token", length = 36)
+    private String parentToken;
+
+    /**
+     * Timestamp when this token was last used to refresh an access token.
+     * Used for idle timeout detection.
+     */
+    @Column(name = "last_used_at", nullable = false)
+    private LocalDateTime lastUsedAt;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
+        this.lastUsedAt = LocalDateTime.now();
         if (this.token == null) {
             this.token = UUID.randomUUID().toString();
         }
+    }
+
+    /**
+     * Updates the last used timestamp.
+     */
+    public void touch() {
+        this.lastUsedAt = LocalDateTime.now();
     }
 
     /**

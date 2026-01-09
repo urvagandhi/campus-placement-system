@@ -1,6 +1,6 @@
 'use client';
 
-import { Briefcase, FileText, LayoutDashboard, TrendingUp, User } from 'lucide-react';
+import { Briefcase, FileText, LayoutDashboard, Shield, TrendingUp, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -13,6 +13,7 @@ export default function StudentSidebar() {
         { name: 'My Applications', href: '/dashboard/student/applications', icon: FileText },
         { name: 'Career Insights', href: '/dashboard/student/insights', icon: TrendingUp },
         { name: 'My Profile', href: '/dashboard/student/profile', icon: User },
+        { name: 'Security & Sessions', href: '/dashboard/student/sessions', icon: Shield },
     ];
 
     const isActive = (path) => {

@@ -95,10 +95,10 @@ export function AuthProvider({ children }) {
      * Login function
      * Calls API, stores user data, navigates to dashboard
      */
-    const login = useCallback(async (email, password) => {
+    const login = useCallback(async (email, password, honeypot) => {
         try {
             // Call API - tokens are set as httpOnly cookies by server
-            const response = await apiLogin(email, password);
+            const response = await apiLogin(email, password, honeypot);
 
             if (!response.success || !response.data) {
                 throw new Error(response.message || 'Login failed');
@@ -141,6 +141,45 @@ export function AuthProvider({ children }) {
             router.push('/login');
         }
     }, [router, clearAuthData]);
+
+    /**
+     * Idle Timeout Detection
+     * Automatically logs out user after inactivity
+     */
+    useEffect(() => {
+        if (!user) return;
+
+        let idleTimer;
+        // Match backend idle timeout (30 mins)
+        const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+
+        const resetTimer = () => {
+            if (idleTimer) clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => {
+                console.log('User active session expired due to inactivity');
+                logout();
+            }, IDLE_TIMEOUT_MS);
+        };
+
+        // Events that define "activity"
+        const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+
+        // Initial timer
+        resetTimer();
+
+        // Add listeners
+        events.forEach(event => {
+            window.addEventListener(event, resetTimer);
+        });
+
+        // Cleanup
+        return () => {
+            if (idleTimer) clearTimeout(idleTimer);
+            events.forEach(event => {
+                window.removeEventListener(event, resetTimer);
+            });
+        };
+    }, [user, logout]);
 
     /**
      * Memoized context value
