@@ -236,10 +236,10 @@ export const applicationsApi = {
         return fetchApi(`/applications/drive/${driveId}`);
     },
 
-    apply: async (driveId, notes = '') => {
+    apply: async (driveId, coverLetter = '') => {
         return fetchApi('/applications/apply', {
             method: 'POST',
-            body: JSON.stringify({ driveId, notes }),
+            body: JSON.stringify({ driveId, coverLetter }),
         });
     },
 

@@ -62,8 +62,19 @@ public class DriveController {
         return ResponseEntity.ok(ApiResponse.success(drives));
     }
 
+    /**
+     * Create a new placement drive.
+     *
+     * <p>
+     * <strong>Defense-in-Depth:</strong> Method-level @PreAuthorize validates
+     * college access
+     * before service layer validation. Coordinators can only create drives for
+     * their own college.
+     * </p>
+     */
     @PostMapping
-    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN') and " +
+            "(hasRole('SUPER_ADMIN') or @scopeSecurityService.canAccessCollege(#request.collegeId))")
     public ResponseEntity<ApiResponse<DriveDTO>> createDrive(
             @Valid @RequestBody CreateDriveRequestDTO request) {
         DriveDTO created = driveService.createDrive(request);

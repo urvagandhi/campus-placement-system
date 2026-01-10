@@ -2,10 +2,14 @@ package com.campusplacement.drives;
 
 import java.time.LocalDate;
 
+import com.campusplacement.colleges.College;
 import com.campusplacement.common.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +19,11 @@ import lombok.Setter;
 
 /**
  * Entity representing a placement drive conducted by a company.
+ *
+ * <p>
+ * <strong>Multi-tenancy:</strong> Each drive belongs to a college (tenant).
+ * Scope enforcement ensures coordinators only see drives within their scope.
+ * </p>
  */
 @Entity
 @Table(name = "placement_drives")
@@ -25,8 +34,20 @@ import lombok.Setter;
 @Builder
 public class PlacementDrive extends BaseEntity {
 
+    /**
+     * College (tenant) this drive belongs to.
+     * Required for scope enforcement.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "college_id", nullable = false)
+    private College college;
+
     @Column(name = "company_id", nullable = false)
     private Long companyId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", insertable = false, updatable = false)
+    private com.campusplacement.companies.Company company;
 
     @Column(nullable = false)
     private String title;
@@ -50,12 +71,14 @@ public class PlacementDrive extends BaseEntity {
     @Builder.Default
     private String status = "UPCOMING"; // UPCOMING, ONGOING, COMPLETED, CANCELLED
 
-    // Eligibility Criteria (stored as JSON or separate fields)
+    // Eligibility Criteria
     @Column(name = "min_cgpa")
     private Double minCgpa;
 
-    @Column(name = "eligible_departments")
-    private String eligibleDepartments; // Comma-separated
+    @jakarta.persistence.ManyToMany(fetch = FetchType.LAZY)
+    @jakarta.persistence.JoinTable(name = "drive_eligible_departments", joinColumns = @JoinColumn(name = "drive_id"), inverseJoinColumns = @JoinColumn(name = "department_id"))
+    @Builder.Default
+    private java.util.Set<com.campusplacement.organizations.OrganizationUnit> eligibleDepartments = new java.util.HashSet<>();
 
     @Column(name = "required_skills")
     private String requiredSkills; // Comma-separated

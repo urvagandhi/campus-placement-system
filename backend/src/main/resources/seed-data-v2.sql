@@ -682,54 +682,79 @@ ON CONFLICT (id) DO UPDATE SET
 -- ================================================================================
 
 INSERT INTO placement_drives (
-    id, company_id, title, job_role, description, package_lpa, drive_date, registration_deadline,
-    status, min_cgpa, max_backlogs, eligible_departments, required_skills, location, is_remote,
+    id, company_id, college_id, title, job_role, description, package_lpa, drive_date, registration_deadline,
+    status, min_cgpa, max_backlogs, required_skills, location, is_remote,
     created_at, updated_at
 ) VALUES
-    (1, 1, 'Google Campus Drive 2026', 'Software Engineer',
+    (1, 1, 1, 'Google Campus Drive 2026', 'Software Engineer',
      'Hiring for SWE roles. Work on products used by billions.',
      32.0, '2026-03-15', '2026-02-28',
-     'UPCOMING', 8.0, 0, 'CSE,CE,IT,CS', 'DSA,System Design,Java,Python',
+     'UPCOMING', 8.0, 0, 'DSA,System Design,Java,Python',
      'Bangalore', FALSE, NOW(), NOW()),
 
-    (2, 2, 'Microsoft IDC Hiring', 'SDE-1',
+    (2, 2, 1, 'Microsoft IDC Hiring', 'SDE-1',
      'Microsoft India Development Center hiring for Azure and Office teams.',
      28.0, '2026-03-01', '2026-02-15',
-     'UPCOMING', 7.5, 0, 'CSE,CE,IT,CS', 'C++,System Programming,Distributed Systems',
+     'UPCOMING', 7.5, 0, 'C++,System Programming,Distributed Systems',
      'Hyderabad', FALSE, NOW(), NOW()),
 
-    (3, 3, 'TCS Digital Hiring', 'System Engineer',
+    (3, 3, 2, 'TCS Digital Hiring', 'System Engineer',
      'TCS Digital hiring for digital transformation projects.',
      7.5, '2026-04-01', '2026-03-20',
-     'UPCOMING', 6.0, 2, 'CSE,CE,IT,CS,ME,MBA', 'Programming,SQL,Communication',
+     'UPCOMING', 6.0, 2, 'Programming,SQL,Communication',
      'Pan India', FALSE, NOW(), NOW()),
 
-    (4, 4, 'Infosys Power Programmer', 'Specialist Programmer',
+    (4, 4, 1, 'Infosys Power Programmer', 'Specialist Programmer',
      'For students with exceptional programming skills.',
      9.5, '2026-03-10', '2026-02-25',
-     'UPCOMING', 7.0, 1, 'CSE,CE,IT,CS', 'DSA,Problem Solving,Java',
+     'UPCOMING', 7.0, 1, 'DSA,Problem Solving,Java',
      'Bangalore,Pune', FALSE, NOW(), NOW()),
 
-    (5, 5, 'Reliance JioGenNext', 'Graduate Engineer Trainee',
+    (5, 5, 2, 'Reliance JioGenNext', 'Graduate Engineer Trainee',
      'Fast-track leadership program at Reliance.',
      12.0, '2026-03-20', '2026-03-10',
-     'UPCOMING', 7.0, 0, 'CSE,CE,IT,CS,ME,MBA', 'Communication,Leadership,Technical Skills',
+     'UPCOMING', 7.0, 0, 'Communication,Leadership,Technical Skills',
      'Mumbai', FALSE, NOW(), NOW()),
 
-    (6, 6, 'Deloitte Consulting', 'Business Analyst',
+    (6, 6, 2, 'Deloitte Consulting', 'Business Analyst',
      'Consulting roles for MBA and engineering graduates.',
      15.0, '2026-03-25', '2026-03-15',
-     'UPCOMING', 7.5, 0, 'MBA,CSE,IT', 'Analytics,Communication,Problem Solving',
+     'UPCOMING', 7.5, 0, 'Analytics,Communication,Problem Solving',
      'Mumbai,Delhi', FALSE, NOW(), NOW())
 ON CONFLICT (id) DO UPDATE SET
     title = EXCLUDED.title,
     status = EXCLUDED.status,
     package_lpa = EXCLUDED.package_lpa,
-    updated_at = NOW();;
+    updated_at = NOW();
+
+-- ================================================================================
+-- SECTION 8: DRIVE ELIGIBLE DEPARTMENTS (Many-to-Many Mapping)
+-- ================================================================================
+
+INSERT INTO drive_eligible_departments (drive_id, department_id) VALUES
+    -- Drive 1 (Google - Nirma): CSE(4), CE(5)
+    (1, 4), (1, 5),
+
+    -- Drive 2 (Microsoft - Nirma): CSE(4), CE(5)
+    (2, 4), (2, 5),
+
+    -- Drive 3 (TCS - PPSU): CS(11), IT(12), MBA(13)
+    (3, 11), (3, 12), (3, 13),
+
+    -- Drive 4 (Infosys - Nirma): CSE(4), CE(5), ME(6)
+    (4, 4), (4, 5), (4, 6),
+
+    -- Drive 5 (Reliance - PPSU): CS(11), IT(12), MBA(13)
+    (5, 11), (5, 12), (5, 13),
+
+    -- Drive 6 (Deloitte - PPSU): IT(12), MBA(13)
+    (6, 12), (6, 13)
+ON CONFLICT DO NOTHING;
+;
 
 
 -- ================================================================================
--- SECTION 8: SAMPLE APPLICATIONS
+-- SECTION 9: SAMPLE APPLICATIONS
 -- ================================================================================
 
 INSERT INTO applications (
@@ -755,7 +780,7 @@ ON CONFLICT (id) DO UPDATE SET
 
 
 -- ================================================================================
--- SECTION 9: SEQUENCE RESET
+-- SECTION 10: SEQUENCE RESET
 -- ================================================================================
 
 SELECT setval('colleges_id_seq', COALESCE((SELECT MAX(id) FROM colleges), 1));;

@@ -46,7 +46,7 @@ public class StudentController {
 
     /**
      * Get current student's profile with full organization hierarchy.
-     * 
+     *
      * <p>
      * Returns the authenticated student's complete profile including:
      * <ul>
@@ -66,15 +66,16 @@ public class StudentController {
 
     /**
      * Update current student's career-layer profile fields.
-     * 
+     *
      * <p>
      * <strong>Security:</strong> Only career-layer fields can be updated:
      * skills, resumeUrl, projectsCount, internshipMonths, certifications,
      * linkedinUrl, githubUrl, careerInterests.
      * </p>
-     * 
+     *
      * <p>
-     * Academic fields (cgpa, enrollmentNo, department, backlogs, batchYear, semester)
+     * Academic fields (cgpa, enrollmentNo, department, backlogs, batchYear,
+     * semester)
      * are IGNORED even if present in the request.
      * </p>
      */
@@ -139,12 +140,19 @@ public class StudentController {
     /**
      * Get students by department.
      * Access: COORDINATOR, ADMIN, SUPER_ADMIN only.
+     *
+     * <p>
+     * <strong>Defense-in-Depth:</strong> Method-level @PreAuthorize checks
+     * department access
+     * before service layer validation.
+     * </p>
      */
-    @GetMapping("/department/{department}")
-    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
+    @GetMapping("/department/{departmentId}")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN') and " +
+            "@scopeSecurityService.canAccessDepartment(#departmentId)")
     public ResponseEntity<ApiResponse<List<StudentProfileDTO>>> getStudentsByDepartment(
-            @PathVariable String department) {
-        List<StudentProfileDTO> students = studentService.getStudentsByDepartment(department);
+            @PathVariable Long departmentId) {
+        List<StudentProfileDTO> students = studentService.getStudentsByDepartmentId(departmentId);
         return ResponseEntity.ok(ApiResponse.success(students));
     }
 
@@ -160,4 +168,3 @@ public class StudentController {
         return ResponseEntity.ok(ApiResponse.success(students));
     }
 }
-

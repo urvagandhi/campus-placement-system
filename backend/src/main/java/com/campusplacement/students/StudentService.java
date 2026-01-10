@@ -17,7 +17,10 @@ import com.campusplacement.auth.LoginAudit;
 import com.campusplacement.auth.LoginAuditRepository;
 import com.campusplacement.auth.SecurityAuditEventType;
 import com.campusplacement.common.UserRole;
+import com.campusplacement.common.exception.ResourceNotFoundException;
+import com.campusplacement.organizations.OrganizationScopeService;
 import com.campusplacement.organizations.OrganizationUnit;
+import com.campusplacement.organizations.ScopeContext;
 import com.campusplacement.security.CustomUserDetails;
 import com.campusplacement.students.dto.StudentProfileDTO;
 import com.campusplacement.students.dto.StudentProfileResponseDTO;
@@ -39,6 +42,8 @@ import lombok.RequiredArgsConstructor;
  * <li>Students can ONLY update career-layer fields</li>
  * <li>Any attempt to modify academic fields is logged and ignored</li>
  * <li>Organization hierarchy is derived, never client-provided</li>
+ * <li><strong>Organization scope enforcement via
+ * OrganizationScopeService</strong></li>
  * </ul>
  */
 @Service
@@ -51,28 +56,64 @@ public class StudentService {
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
     private final LoginAuditRepository loginAuditRepository;
+    private final OrganizationScopeService scopeService;
+    private final com.campusplacement.eligibility.DriveEligibilityService driveEligibilityService;
 
     // ==================== Read Operations ====================
 
     /**
-     * Retrieves all student profiles.
+     * Retrieves all student profiles within the user's scope.
+     *
+     * <p>
+     * <strong>Scope Enforcement:</strong>
+     * </p>
+     * <ul>
+     * <li>SUPER_ADMIN: All students across all colleges</li>
+     * <li>ADMIN: All students in their college</li>
+     * <li>COORDINATOR with SUBTREE at UNIVERSITY: All students in college</li>
+     * <li>COORDINATOR with limited scope: Only students in allowed departments</li>
+     * <li>STUDENT: Should not reach here (handled by controller RBAC)</li>
+     * </ul>
+     *
      * Access: COORDINATOR, ADMIN, SUPER_ADMIN only.
      */
     @Transactional(readOnly = true)
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
     public List<StudentProfileDTO> getAllStudents() {
-        CustomUserDetails currentUser = getCurrentUser();
-        Long collegeId = currentUser.getCollegeId();
+        Long userId = getCurrentUserId();
+        ScopeContext scope = scopeService.resolveScope(userId);
 
-        // Enforce tenant isolation
-        return studentRepository.findAll().stream()
-                .filter(profile -> {
-                    User user = profile.getUser();
-                    if (user == null || user.getCollege() == null)
-                        return false;
-                    return user.getCollege().getId().equals(collegeId);
-                })
-                .map(this::toBasicDTO)
-                .collect(Collectors.toList());
+        // 1. SUPER_ADMIN: Platform owner - no restrictions
+        if (scope.isSuperAdmin()) {
+            log.debug("SUPER_ADMIN access: returning all students");
+            return studentRepository.findAll().stream()
+                    .map(this::toBasicDTO)
+                    .collect(Collectors.toList());
+        }
+
+        // 2. Full College Access: ADMIN role OR Coordinator with SUBTREE at UNIVERSITY
+        // hasFullCollegeAccess() = isAdmin() || isUniversityScope
+        if (scope.hasFullCollegeAccess()) {
+            log.debug("Full college access for userId {}: returning all students in college {}",
+                    userId, scope.collegeId());
+            return studentRepository.findByCollegeId(scope.collegeId()).stream()
+                    .map(this::toBasicDTO)
+                    .collect(Collectors.toList());
+        }
+
+        // 3. Scoped Access: COORDINATOR with limited org assignments
+        // Only sees students in their allowed departments
+        if (scope.hasScopedAccess()) {
+            log.debug("Scoped access for userId {}: {} departments allowed",
+                    userId, scope.allowedDepartmentIds().size());
+            return studentRepository.findByDepartmentIdInAndCollegeId(
+                    scope.allowedDepartmentIds(),
+                    scope.collegeId()).stream().map(this::toBasicDTO).collect(Collectors.toList());
+        }
+
+        // 4. STUDENT or no assignments: Fail-secure - return empty
+        log.warn("No scope access for userId {} with role {}", userId, scope.role());
+        return Collections.emptyList();
     }
 
     private CustomUserDetails getCurrentUser() {
@@ -101,6 +142,7 @@ public class StudentService {
      * Access: STUDENT only (their own profile).
      */
     @Transactional(readOnly = true)
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('STUDENT')")
     public StudentProfileResponseDTO getCurrentStudentProfile() {
         Long userId = getCurrentUserId();
 
@@ -112,16 +154,21 @@ public class StudentService {
     }
 
     /**
-     * Retrieves students by department ID.
+     * Retrieves students by department ID with scope enforcement.
+     *
+     * <p>
+     * <strong>Security:</strong> Validates that the requesting user has access
+     * to the specified department before returning data.
+     * </p>
+     *
      * Access: COORDINATOR, ADMIN, SUPER_ADMIN only.
      */
     @Transactional(readOnly = true)
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
     public List<StudentProfileDTO> getStudentsByDepartment(String departmentIdOrName) {
         try {
             Long departmentId = Long.parseLong(departmentIdOrName);
-            return studentRepository.findByDepartmentId(departmentId).stream()
-                    .map(this::toBasicDTO)
-                    .collect(Collectors.toList());
+            return getStudentsByDepartmentId(departmentId);
         } catch (NumberFormatException e) {
             // Legacy support: search by name if not a numeric ID
             log.warn("Department lookup by name is deprecated, use ID instead: {}", departmentIdOrName);
@@ -130,15 +177,75 @@ public class StudentService {
     }
 
     /**
+     * Retrieves students by department ID with scope enforcement.
+     *
+     * <p>
+     * <strong>Security:</strong> Validates that the requesting user has access
+     * to the specified department before returning data. Used by both controller
+     * (with method-level @PreAuthorize) and internal calls.
+     * </p>
+     *
+     * Access: COORDINATOR, ADMIN, SUPER_ADMIN only.
+     */
+    @Transactional(readOnly = true)
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
+    public List<StudentProfileDTO> getStudentsByDepartmentId(Long departmentId) {
+        Long userId = getCurrentUserId();
+        ScopeContext scope = scopeService.resolveScope(userId);
+
+        // Validate scope access to this department
+        if (!scope.isSuperAdmin() && !scope.canAccessDepartment(departmentId)) {
+            auditLog.warn("SECURITY: User {} attempted to access department {} without permission",
+                    userId, departmentId);
+            throw new AccessDeniedException("No access to department: " + departmentId);
+        }
+
+        return studentRepository.findByDepartmentId(departmentId).stream()
+                .map(this::toBasicDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Retrieves eligible students for a placement drive.
      * Access: COORDINATOR, ADMIN only.
      */
+    /**
+     * Gets eligible students for a specific placement drive.
+     *
+     * <p>
+     * Integrates with DriveEligibilityService to check CGPA, backlogs,
+     * department eligibility, and college match.
+     * </p>
+     *
+     * @param driveId ID of the placement drive
+     * @return list of eligible students (scope-filtered)
+     */
     @Transactional(readOnly = true)
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
     public List<StudentProfileDTO> getEligibleStudentsForDrive(Long driveId) {
-        // TODO: Integrate with DriveService to get eligibility criteria
-        // For now, return all students as placeholder
         log.info("Fetching eligible students for drive: {}", driveId);
-        return getAllStudents();
+
+        Long userId = getCurrentUserId();
+        ScopeContext scope = scopeService.resolveScope(userId);
+
+        // Validate user has access to this drive
+        // (Drive eligibility service will handle this internally)
+
+        try {
+            // Use DriveEligibilityService to get eligible students (already scope-filtered)
+            List<StudentProfile> eligibleProfiles = driveEligibilityService.getEligibleStudents(driveId, userId);
+
+            return eligibleProfiles.stream()
+                    .map(this::toBasicDTO)
+                    .collect(Collectors.toList());
+
+        } catch (ResourceNotFoundException e) {
+            log.error("Drive {} not found", driveId, e);
+            throw e;
+        } catch (AccessDeniedException e) {
+            log.warn("User {} attempted to access drive {} without permission", userId, driveId);
+            throw e;
+        }
     }
 
     // ==================== Write Operations ====================

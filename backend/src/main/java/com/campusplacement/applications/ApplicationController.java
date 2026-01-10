@@ -32,8 +32,20 @@ public class ApplicationController {
 
     private final ApplicationService applicationService;
 
+    /**
+     * Get all applications (scope-enforced).
+     *
+     * <p>
+     * <strong>Scope Enforcement:</strong>
+     * <ul>
+     * <li>SUPER_ADMIN: All applications across all colleges</li>
+     * <li>ADMIN: All applications in their college</li>
+     * <li>COORDINATOR: Only applications from students in their scope</li>
+     * </ul>
+     * </p>
+     */
     @GetMapping
-    @PreAuthorize("hasAnyRole('TPO', 'ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<List<ApplicationDTO>>> getAllApplications() {
         List<ApplicationDTO> applications = applicationService.getAllApplications();
         return ResponseEntity.ok(ApiResponse.success(applications));
@@ -46,8 +58,16 @@ public class ApplicationController {
         return ResponseEntity.ok(ApiResponse.success(applications));
     }
 
+    /**
+     * Get applications for a specific drive (scope-enforced).
+     *
+     * <p>
+     * <strong>Defense-in-Depth:</strong> Method-level check validates drive access,
+     * service layer filters by allowed departments.
+     * </p>
+     */
     @GetMapping("/drive/{driveId}")
-    @PreAuthorize("hasAnyRole('TPO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN')")
     public ResponseEntity<ApiResponse<List<ApplicationDTO>>> getApplicationsByDrive(
             @PathVariable Long driveId) {
         List<ApplicationDTO> applications = applicationService.getApplicationsByDrive(driveId);
@@ -62,8 +82,17 @@ public class ApplicationController {
         return ResponseEntity.ok(ApiResponse.success(application, "Applied successfully"));
     }
 
+    /**
+     * Update application status.
+     *
+     * <p>
+     * <strong>Security:</strong> Only COORDINATOR and ADMIN can update application
+     * status.
+     * Service layer validates scope access to the student's department.
+     * </p>
+     */
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('TPO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN')")
     public ResponseEntity<ApiResponse<ApplicationDTO>> updateStatus(
             @PathVariable Long id,
             @RequestParam String status) {

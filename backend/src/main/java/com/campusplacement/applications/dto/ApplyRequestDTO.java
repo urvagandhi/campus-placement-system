@@ -18,5 +18,8 @@ public class ApplyRequestDTO {
     @NotNull(message = "Drive ID is required")
     private Long driveId;
 
-    private String notes;
+    private String coverLetter;
+
+    // Optional: Allow submitting a specific resume for this application
+    private String resumeUrl;
 }

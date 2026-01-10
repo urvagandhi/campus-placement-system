@@ -14,22 +14,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class PlacementStatsDTO {
 
-    private Integer totalStudents;
-    private Integer placedStudents;
-    private Integer unplacedStudents;
-    private Double placementPercentage;
+    private Long totalStudents;
+    private Long placedStudents;
+    private Long shortlistedStudents;
+    private Double placementRate;
 
-    private Integer totalDrives;
-    private Integer completedDrives;
-    private Integer upcomingDrives;
+    private Long totalApplications;
 
-    private Integer totalCompanies;
-    private Integer companiesVisited;
+    private Long companiesVisited;
 
     private Double averagePackage;
     private Double highestPackage;
     private Double lowestPackage;
-
-    private Integer totalApplications;
-    private Integer totalOffers;
 }

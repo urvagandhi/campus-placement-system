@@ -689,6 +689,9 @@ CREATE TABLE IF NOT EXISTS placement_drives (
     -- Company conducting the drive
     company_id              BIGINT          NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
 
+    -- Tenant/College owner (added in v2.0.1)
+    college_id              BIGINT          REFERENCES colleges(id) ON DELETE CASCADE,
+
     -- Drive title (e.g., "Google SDE Campus Drive 2026")
     title                   VARCHAR(255)    NOT NULL,
 
@@ -719,9 +722,6 @@ CREATE TABLE IF NOT EXISTS placement_drives (
 
     -- Maximum active backlogs allowed (0 = no backlogs allowed)
     max_backlogs            INTEGER         DEFAULT 0,
-
-    -- Comma-separated eligible department codes (e.g., "CSE,ECE,IT")
-    eligible_departments    TEXT,
 
     -- Comma-separated required skills (e.g., "Java,Spring,SQL")
     required_skills         TEXT,
@@ -755,6 +755,35 @@ CREATE INDEX IF NOT EXISTS idx_drives_status ON placement_drives(status);;
 CREATE INDEX IF NOT EXISTS idx_drives_date ON placement_drives(drive_date);;
 CREATE INDEX IF NOT EXISTS idx_drives_deadline ON placement_drives(registration_deadline);;
 CREATE INDEX IF NOT EXISTS idx_drives_min_cgpa ON placement_drives(min_cgpa);;
+
+
+-- -----------------------------------------------------------------------------
+-- Migration: Add college_id to placement_drives if missing
+-- -----------------------------------------------------------------------------
+ALTER TABLE placement_drives ADD COLUMN IF NOT EXISTS college_id BIGINT REFERENCES colleges(id) ON DELETE CASCADE;;
+CREATE INDEX IF NOT EXISTS idx_drives_college ON placement_drives(college_id);;
+
+
+-- ================================================================================
+-- 3.7.1 DRIVE ELIGIBLE DEPARTMENTS (Join Table)
+-- ================================================================================
+-- Purpose: Many-to-Many mapping between drives and eligible departments.
+--          Replaces the fragile comma-separated string approach.
+--
+-- Key Design Decisions:
+--   - FKs to placement_drives and organization_units
+--   - Composite PK for uniqueness
+-- ================================================================================
+
+CREATE TABLE IF NOT EXISTS drive_eligible_departments (
+    drive_id                BIGINT          NOT NULL REFERENCES placement_drives(id) ON DELETE CASCADE,
+    department_id           BIGINT          NOT NULL REFERENCES organization_units(id) ON DELETE CASCADE,
+
+    PRIMARY KEY (drive_id, department_id)
+);;
+
+CREATE INDEX IF NOT EXISTS idx_drive_elig_dept_drive ON drive_eligible_departments(drive_id);;
+CREATE INDEX IF NOT EXISTS idx_drive_elig_dept_dept ON drive_eligible_departments(department_id);;
 
 
 -- ================================================================================

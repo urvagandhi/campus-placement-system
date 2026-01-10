@@ -25,6 +25,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CreateDriveRequestDTO {
 
+    /**
+     * College ID for the drive.
+     * Optional - if not provided, uses the current user's college.
+     * Required for SUPER_ADMIN creating drives for specific colleges.
+     */
+    private Long collegeId;
+
     @NotNull(message = "Company ID is required")
     private Long companyId;
 
@@ -52,7 +59,7 @@ public class CreateDriveRequestDTO {
     private Double minCgpa;
 
     @NotEmpty(message = "At least one eligible department is required")
-    private List<String> eligibleDepartments;
+    private java.util.Set<Long> eligibleDepartments;
 
     private List<String> requiredSkills;
 

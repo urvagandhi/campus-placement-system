@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
 public class DriveDTO {
 
     private Long id;
+    private Long collegeId;
     private Long companyId;
     private String companyName;
     private String title;
@@ -30,7 +31,7 @@ public class DriveDTO {
 
     // Eligibility criteria
     private Double minCgpa;
-    private List<String> eligibleDepartments;
+    private java.util.Set<Long> eligibleDepartments;
     private List<String> requiredSkills;
     private Integer maxBacklogs;
 
