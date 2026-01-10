@@ -41,10 +41,10 @@ public class Application extends BaseEntity {
     @Column(name = "applied_at", nullable = false)
     private LocalDateTime appliedAt;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "cover_letter", columnDefinition = "TEXT")
     private String notes;
 
-    @Column(name = "resume_snapshot_url")
+    @Column(name = "resume_url")
     private String resumeSnapshotUrl;
 
     @Column(name = "shortlisted_at")

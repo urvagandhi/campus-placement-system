@@ -59,6 +59,30 @@ Login and receive JWT token.
 
 Get current authenticated user.
 
+### POST `/api/v1/auth/refresh`
+
+Refresh access token using a valid refresh token.
+
+**Request:**
+```json
+{
+  "refreshToken": "uuid-refresh-token-string"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
+    "refreshToken": "new-uuid-refresh-token",
+    "tokenType": "Bearer",
+    "expiresIn": 86400
+  }
+}
+```
+
 ---
 
 ## User Governance Endpoints

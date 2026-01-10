@@ -38,7 +38,7 @@ This document outlines the security model for the Campus Placement System, inclu
 
 ### Core Principle
 
-> Roles define **WHAT** a user can do.  
+> Roles define **WHAT** a user can do.
 > Organizational assignments define **WHERE** they can do it.
 
 ### Field Classifications
@@ -136,13 +136,53 @@ All security-relevant events are logged to `SECURITY_AUDIT` logger:
 - **Token Location**: `Authorization: Bearer <token>` header
 - **Token Contents**: User ID, role, college ID (claims)
 - **Expiration**: Configurable (default 24 hours)
-- **Refresh**: Not implemented (re-login required)
+- **Refresh**: Token rotation with refresh tokens
 
 ### Token Security
 
 - Tokens are stateless (no server-side storage)
 - Role is verified from database, not token claims
 - Scope is always derived from database, never from client
+- Refresh tokens support device fingerprinting
+
+### Security Headers
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| Content-Security-Policy | `default-src 'self'; ...` | Mitigates XSS attacks |
+| X-Frame-Options | `DENY` | Prevents clickjacking |
+| X-Content-Type-Options | `nosniff` | Prevents MIME type sniffing |
+| Referrer-Policy | `strict-origin-when-cross-origin` | Controls referrer information |
+| Strict-Transport-Security | `max-age=31536000; includeSubDomains` | Enforces HTTPS |
+
+---
+
+## Security Audit Logging
+
+All security events are logged to `login_audit` table:
+
+### Audit Event Types
+
+| Event Type | Description |
+|------------|-------------|
+| `LOGIN` | Standard login attempt |
+| `REGISTER` | User registration event |
+| `LOGOUT` | User logout |
+| `TOKEN_REFRESH` | Refresh token used |
+| `PASSWORD_RESET` | Password reset initiated |
+| `PASSWORD_CHANGE` | Password changed |
+| `ACCOUNT_LOCKED` | Account locked due to failed attempts |
+| `PROFILE_UPDATE` | Profile information updated |
+| `PROFILE_VIEW` | Profile viewed |
+| `TOKEN_REUSE_DETECTED` | Potential token replay attack detected |
+| `UNAUTHORIZED_DEVICE` | Token used from unauthorized device |
+| `ACCESS_DENIED` | 403 Forbidden - insufficient permissions |
+| `AUTHENTICATION_FAILURE` | 401 Unauthorized - authentication failed |
+
+### Custom Security Handlers
+
+- **CustomAuthenticationEntryPoint**: Handles 401 errors, logs to audit table
+- **CustomAccessDeniedHandler**: Handles 403 errors, logs to audit table
 
 ---
 
@@ -150,9 +190,10 @@ All security-relevant events are logged to `SECURITY_AUDIT` logger:
 
 | Scenario | HTTP Status | Response |
 |----------|-------------|----------|
-| Invalid token | 401 | Unauthorized |
-| Expired token | 401 | Unauthorized |
-| Insufficient role | 403 | Forbidden |
-| Cross-profile access | 403 | Forbidden |
+| Invalid token | 401 | Unauthorized (logged to audit) |
+| Expired token | 401 | Unauthorized (logged to audit) |
+| Insufficient role | 403 | Forbidden (logged to audit) |
+| Cross-profile access | 403 | Forbidden (logged to audit) |
 | Apply after deadline | 400 | Bad Request |
 | Duplicate application | 409 | Conflict |
+

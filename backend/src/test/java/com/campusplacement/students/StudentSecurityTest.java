@@ -1,7 +1,10 @@
 package com.campusplacement.students;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -135,7 +138,7 @@ class StudentSecurityTest extends AbstractIntegrationTest {
                 .cgpa(8.5)
                 .backlogs(0)
                 .batchYear(2024)
-                .semester("7")
+                .semester(7)
                 .skills("Java,Python")
                 .build();
         studentProfile1 = studentRepository.save(studentProfile1);

@@ -5,9 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
-import org.hibernate.type.SqlTypes;
 
 import com.campusplacement.colleges.College;
 import com.campusplacement.common.BaseEntity;
@@ -76,7 +74,18 @@ import lombok.Setter;
 @Builder
 public class User extends BaseEntity {
 
-    @Column(nullable = false)
+    /**
+     * Login username (globally unique).
+     * Used as the primary identifier for authentication.
+     */
+    @Column(nullable = false, unique = true)
+    private String username;
+
+    /**
+     * Display name (e.g., "Dr. Amit Patel").
+     * Maps to 'full_name' column in the database.
+     */
+    @Column(name = "full_name", nullable = false)
     private String name;
 
     @Column(nullable = false)
@@ -90,8 +99,7 @@ public class User extends BaseEntity {
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(nullable = false, columnDefinition = "user_role")
+    @Column(nullable = false)
     private UserRole role;
 
     /**

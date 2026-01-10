@@ -28,7 +28,7 @@ public class SecurityAnalyticsController {
      * Gets security dashboard statistics.
      */
     @GetMapping("/stats")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<SecurityStatsDTO>> getSecurityStats() {
         return ResponseEntity.ok(ApiResponse.success(securityAnalyticsService.getSecurityStats()));
     }

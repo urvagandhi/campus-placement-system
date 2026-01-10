@@ -7,7 +7,7 @@ const nextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://*.tile.openstreetmap.org https://*.tile.osm.org; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' http://localhost:8080 http://localhost:3000; frame-ancestors 'none'; upgrade-insecure-requests;",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://*.tile.openstreetmap.org https://*.tile.osm.org; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' http://localhost:8080 http://127.0.0.1:8080 http://localhost:3000 ws://localhost:3000; frame-ancestors 'none';",
           },
           {
             key: 'X-Frame-Options',
@@ -29,11 +29,8 @@ const nextConfig = {
       },
     ];
   },
-  experimental: {
-    sri: {
-      algorithm: 'sha256',
-    },
-  },
+  // Note: experimental.sri removed - not supported by Turbopack in Next.js 16
+  // Re-add when Turbopack supports SRI: experimental: { sri: { algorithm: 'sha256' } }
 };
 
 export default nextConfig;

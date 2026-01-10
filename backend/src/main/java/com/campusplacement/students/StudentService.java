@@ -60,9 +60,27 @@ public class StudentService {
      */
     @Transactional(readOnly = true)
     public List<StudentProfileDTO> getAllStudents() {
+        CustomUserDetails currentUser = getCurrentUser();
+        Long collegeId = currentUser.getCollegeId();
+
+        // Enforce tenant isolation
         return studentRepository.findAll().stream()
+                .filter(profile -> {
+                    User user = profile.getUser();
+                    if (user == null || user.getCollege() == null)
+                        return false;
+                    return user.getCollege().getId().equals(collegeId);
+                })
                 .map(this::toBasicDTO)
                 .collect(Collectors.toList());
+    }
+
+    private CustomUserDetails getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof CustomUserDetails)) {
+            throw new AccessDeniedException("User not authenticated");
+        }
+        return (CustomUserDetails) auth.getPrincipal();
     }
 
     /**

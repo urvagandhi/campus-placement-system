@@ -3,7 +3,8 @@
 import {
     Building2,
     LayoutDashboard,
-    Settings
+    Settings,
+    Shield
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -14,6 +15,7 @@ export default function SuperAdminSidebar() {
     const menuItems = [
         { name: 'Dashboard', href: '/dashboard/superadmin', icon: LayoutDashboard },
         { name: 'Manage Colleges', href: '/dashboard/superadmin/colleges', icon: Building2 },
+        { name: 'Security Monitoring', href: '/dashboard/superadmin/security', icon: Shield },
         { name: 'System Settings', href: '/dashboard/superadmin/settings', icon: Settings },
     ];
 

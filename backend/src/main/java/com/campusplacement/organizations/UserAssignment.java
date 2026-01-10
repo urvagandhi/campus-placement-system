@@ -89,7 +89,7 @@ public class UserAssignment {
      * </ul>
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "scope_level")
+    @Column(name = "scope")
     @Builder.Default
     private ScopeLevel scopeLevel = ScopeLevel.SUBTREE;
 

@@ -27,7 +27,8 @@ import lombok.Setter;
  * <li>Institution-Owned (immutable by student): enrollmentNo, departmentId,
  * cgpa, backlogs, batchYear, semester</li>
  * <li>Student-Owned (editable): skills, resumeUrl, projectsCount,
- * internshipMonths, certifications, linkedinUrl, githubUrl, careerInterests</li>
+ * internshipMonths, certifications, linkedinUrl, githubUrl,
+ * careerInterests</li>
  * </ul>
  *
  * <p>
@@ -60,16 +61,17 @@ public class StudentProfile extends BaseEntity {
      * Unique enrollment/registration number assigned by institution.
      * Immutable - cannot be changed by student.
      */
-    @Column(name = "enrollment_no", nullable = false, unique = true)
+    @Column(name = "enrollment_number", nullable = false, unique = true)
     private String enrollmentNo;
 
     /**
      * Department within the organizational hierarchy.
      * Derived path: Department → Institute → College.
      * Immutable - cannot be changed by student.
+     * Note: Nullable per schema (ON DELETE SET NULL).
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id", nullable = false)
+    @JoinColumn(name = "department_id")
     private OrganizationUnit department;
 
     /**
@@ -83,7 +85,7 @@ public class StudentProfile extends BaseEntity {
      * Number of active backlogs/pending courses.
      * Immutable - updated only by institution.
      */
-    @Column
+    @Column(name = "active_backlogs")
     @Builder.Default
     private Integer backlogs = 0;
 
@@ -95,11 +97,11 @@ public class StudentProfile extends BaseEntity {
     private Integer batchYear;
 
     /**
-     * Current semester (e.g., "7", "8").
+     * Current semester (1-8 for UG, 1-4 for PG).
      * Immutable - updated only by institution.
      */
-    @Column
-    private String semester;
+    @Column(name = "current_semester")
+    private Integer semester;
 
     // ==================== Career Layer (Student-Owned) ====================
 
@@ -174,4 +176,3 @@ public class StudentProfile extends BaseEntity {
         return user != null ? user.getId() : null;
     }
 }
-

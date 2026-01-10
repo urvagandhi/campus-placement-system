@@ -70,6 +70,14 @@ public class UserManagementService {
                 currentUser.getUsername());
     }
 
+    private void validateCoordinatorScope(CustomUserDetails coordinator, Long targetOrgUnitId) {
+        // TODO: Implement rigorous subtree checking once OrganizationService is
+        // available
+        // For now, minimal check: If Coordinator has specific assignment, warn/block if
+        // strictly lower
+        // This is a placeholder for the strict hierarchical check required by the audit
+    }
+
     /**
      * Creates a new coordinator (TPO) user.
      * MUST be called by ADMIN.

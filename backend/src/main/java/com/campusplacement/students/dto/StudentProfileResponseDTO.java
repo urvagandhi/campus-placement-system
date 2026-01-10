@@ -111,7 +111,7 @@ public class StudentProfileResponseDTO {
     /**
      * Current semester.
      */
-    private String semester;
+    private Integer semester;
 
     // ==================== Career Layer (Editable) ====================
 

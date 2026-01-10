@@ -34,24 +34,28 @@ public class DriveController {
     private final DriveService driveService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<List<DriveDTO>>> getAllDrives() {
         List<DriveDTO> drives = driveService.getAllDrives();
         return ResponseEntity.ok(ApiResponse.success(drives));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN', 'STUDENT')")
     public ResponseEntity<ApiResponse<DriveDTO>> getDriveById(@PathVariable Long id) {
         DriveDTO drive = driveService.getDriveById(id);
         return ResponseEntity.ok(ApiResponse.success(drive));
     }
 
     @GetMapping("/upcoming")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN', 'STUDENT')")
     public ResponseEntity<ApiResponse<List<DriveDTO>>> getUpcomingDrives() {
         List<DriveDTO> drives = driveService.getUpcomingDrives();
         return ResponseEntity.ok(ApiResponse.success(drives));
     }
 
     @GetMapping("/company/{companyId}")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<List<DriveDTO>>> getDrivesByCompany(
             @PathVariable Long companyId) {
         List<DriveDTO> drives = driveService.getDrivesByCompany(companyId);
@@ -59,7 +63,7 @@ public class DriveController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('TPO', 'ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<DriveDTO>> createDrive(
             @Valid @RequestBody CreateDriveRequestDTO request) {
         DriveDTO created = driveService.createDrive(request);
@@ -67,7 +71,7 @@ public class DriveController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('TPO', 'ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<DriveDTO>> updateDrive(
             @PathVariable Long id,
             @Valid @RequestBody DriveDTO driveDTO) {
@@ -76,7 +80,7 @@ public class DriveController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('TPO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN')")
     public ResponseEntity<ApiResponse<DriveDTO>> updateDriveStatus(
             @PathVariable Long id,
             @RequestParam String status) {

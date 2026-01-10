@@ -76,7 +76,7 @@ public class OrganizationUnit extends BaseEntity {
     private OrganizationUnitType type;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id")
+    @JoinColumn(name = "parent_unit_id")
     private OrganizationUnit parent;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)

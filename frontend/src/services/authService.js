@@ -7,7 +7,7 @@
 
 import { fetchWithRetry as fetch } from '@/utils/fetchUtils';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
 /**
  * Login with email and password.
@@ -194,13 +194,21 @@ export async function getSecurityStats() {
         credentials: 'include',
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || 'Failed to get security stats');
+    if (response.status === 401 || response.status === 403) {
+        throw new Error('Access Denied: You do not have permission to view security analytics.');
     }
 
-    return data.data;
+    if (!response.ok) {
+        throw new Error(`Failed to get security stats: ${response.status} ${response.statusText}`);
+    }
+
+    try {
+        const data = await response.json();
+        return data.data;
+    } catch (err) {
+        console.error("Failed to parse security stats response:", err);
+        throw new Error("Invalid response format from server.");
+    }
 }
 
 /**

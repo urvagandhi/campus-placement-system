@@ -56,6 +56,8 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService userDetailsService;
+    private final com.campusplacement.security.CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final com.campusplacement.security.CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -71,8 +73,10 @@ public class SecurityConfig {
 
                 // Authorization rules
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints - login and refresh are public
-                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
+                        // Public endpoints - login, refresh, and logout are public to handle session
+                        // cleanup
+                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout")
+                        .permitAll()
                         .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/health", "/actuator/**").permitAll()
 
@@ -100,9 +104,9 @@ public class SecurityConfig {
                                         "img-src 'self' data: https://*.tile.openstreetmap.org https://*.tile.osm.org; "
                                         +
                                         "font-src 'self' https://fonts.gstatic.com data:; " +
-                                        "connect-src 'self' http://localhost:8080 http://localhost:3000; " +
-                                        "frame-ancestors 'none'; " +
-                                        "upgrade-insecure-requests;"))
+                                        "connect-src 'self' http://localhost:8080 http://127.0.0.1:8080 http://localhost:3000; "
+                                        +
+                                        "frame-ancestors 'none'; "))
                         // X-Frame-Options: DENY
                         .frameOptions(frame -> frame.deny())
                         // X-Content-Type-Options: nosniff
@@ -113,7 +117,12 @@ public class SecurityConfig {
                         // Strict-Transport-Security: max-age=31536000; includeSubDomains
                         .httpStrictTransportSecurity(hsts -> hsts
                                 .includeSubDomains(true)
-                                .maxAgeInSeconds(31536000)));
+                                .maxAgeInSeconds(31536000)))
+
+                // Exception handling
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+                        .accessDeniedHandler(customAccessDeniedHandler));
 
         return http.build();
     }

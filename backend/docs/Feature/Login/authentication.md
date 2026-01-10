@@ -573,28 +573,91 @@ boolean matches = passwordEncoder.matches(plainPassword, hash);
 
 ### Audit Logging
 
-Every login attempt is logged with:
+Every security event is logged with:
 - User ID (if known)
 - Email attempted
 - Timestamp
 - IP address (X-Forwarded-For aware)
 - User agent
+- Event type
 - Success/failure status
+- Failure reason (for failed events)
+
+#### Security Audit Event Types
+
+| Event Type | Description |
+|------------|-------------|
+| `LOGIN` | Standard login attempt |
+| `REGISTER` | User registration event |
+| `LOGOUT` | User logout |
+| `TOKEN_REFRESH` | Refresh token used |
+| `PASSWORD_RESET` | Password reset initiated |
+| `PASSWORD_CHANGE` | Password changed |
+| `ACCOUNT_LOCKED` | Account locked due to failed attempts |
+| `PROFILE_UPDATE` | Profile information updated |
+| `PROFILE_VIEW` | Profile viewed |
+| `TOKEN_REUSE_DETECTED` | Potential token replay attack detected |
+| `UNAUTHORIZED_DEVICE` | Token used from unauthorized device |
+| `ACCESS_DENIED` | 403 Forbidden - insufficient permissions |
+| `AUTHENTICATION_FAILURE` | 401 Unauthorized - authentication failed |
+
+#### LoginAudit Entity
 
 ```java
 @Entity
 @Table(name = "login_audit")
 public class LoginAudit {
-    @Id @GeneratedValue
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long userId;
+
+    @Column(name = "user_id")
+    private Long userId;  // NULL for unknown email attempts
+
+    @Column(name = "email")
     private String email;
+
+    @Column(name = "login_time", nullable = false)
     private LocalDateTime loginTime;
+
+    @Column(name = "ip_address")
     private String ipAddress;
+
+    @Column(name = "user_agent")
     private String userAgent;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "event_type", nullable = false)
+    private SecurityAuditEventType eventType = SecurityAuditEventType.LOGIN;
+
+    @Column(name = "success", nullable = false)
     private Boolean success;
+
+    @Column(name = "failure_reason")
+    private String failureReason;
 }
 ```
+
+#### Custom Security Handlers
+
+**CustomAuthenticationEntryPoint (401 Unauthorized)**
+
+Handles unauthenticated access attempts:
+- Logs the authentication failure to `login_audit`
+- Records IP address and requested path
+- Returns structured JSON error response
+
+**Location**: `com.campusplacement.security.CustomAuthenticationEntryPoint`
+
+**CustomAccessDeniedHandler (403 Forbidden)**
+
+Handles access denial for authenticated users:
+- Logs the access denial to `login_audit`
+- Records user email, IP address, and requested path
+- Returns structured JSON error response
+
+**Location**: `com.campusplacement.security.CustomAccessDeniedHandler`
 
 ### Rate Limiting
 
@@ -716,22 +779,93 @@ spring:
 ```java
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomUserDetailsService userDetailsService;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            // Disable CSRF for REST API
             .csrf(csrf -> csrf.disable())
+
+            // Enable CORS
+            .cors(Customizer.withDefaults())
+
+            // Stateless session management
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+            // Authorization rules
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/login").permitAll()
-                .requestMatchers("/api/v1/**").authenticated()
-            )
+                // Public endpoints
+                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh",
+                    "/api/v1/auth/logout").permitAll()
+                .requestMatchers("/api-docs/**", "/swagger-ui/**").permitAll()
+                .requestMatchers("/health", "/actuator/**").permitAll()
+
+                // Role-based protection
+                .requestMatchers("/api/v1/superadmin/**").hasRole("SUPER_ADMIN")
+                .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/api/v1/coordinator/**")
+                    .hasAnyRole("COORDINATOR", "ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/api/v1/student/**")
+                    .hasAnyRole("STUDENT", "COORDINATOR", "ADMIN", "SUPER_ADMIN")
+
+                // All other requests require authentication
+                .anyRequest().authenticated())
+
+            // Add JWT filter
+            .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthenticationFilter,
-                UsernamePasswordAuthenticationFilter.class);
+                UsernamePasswordAuthenticationFilter.class)
+
+            // Security Headers
+            .headers(headers -> headers
+                // Content Security Policy
+                .contentSecurityPolicy(csp -> csp.policyDirectives(
+                    "default-src 'self'; " +
+                    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                    "frame-ancestors 'none';"))
+                // X-Frame-Options: DENY
+                .frameOptions(frame -> frame.deny())
+                // X-Content-Type-Options: nosniff
+                .contentTypeOptions(Customizer.withDefaults())
+                // Referrer-Policy
+                .referrerPolicy(referrer -> referrer.policy(
+                    ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                // HSTS (31536000 seconds = 1 year)
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .maxAgeInSeconds(31536000)))
+
+            // Exception handling with custom handlers
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint(customAuthenticationEntryPoint)
+                .accessDeniedHandler(customAccessDeniedHandler));
 
         return http.build();
     }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder(12);  // 12 rounds
+    }
 }
 ```
+
+### Security Headers
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| Content-Security-Policy | `default-src 'self'; ...` | Mitigates XSS attacks |
+| X-Frame-Options | `DENY` | Prevents clickjacking |
+| X-Content-Type-Options | `nosniff` | Prevents MIME type sniffing |
+| Referrer-Policy | `strict-origin-when-cross-origin` | Controls referrer information |
+| Strict-Transport-Security | `max-age=31536000; includeSubDomains` | Enforces HTTPS |
+

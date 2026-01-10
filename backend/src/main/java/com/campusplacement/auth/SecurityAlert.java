@@ -37,14 +37,17 @@ public class SecurityAlert {
     private String email;
 
     @Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(name = "alert_type")
     private SecurityAuditEventType alertType;
 
     private String severity; // LOW, MEDIUM, HIGH, CRITICAL
 
     private String message;
 
+    @Column(name = "ip_address")
     private String ipAddress;
 
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "is_resolved")

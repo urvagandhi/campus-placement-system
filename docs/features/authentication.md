@@ -96,7 +96,7 @@ Header.Payload.Signature
 ## Security Features
 
 ### Password Security
-- BCrypt hashing with salt
+- BCrypt hashing with 12 rounds
 - No plaintext storage
 - Server-side validation only
 
@@ -105,19 +105,32 @@ Header.Payload.Signature
 - 256-bit minimum secret key
 - Version-based invalidation support
 - Short-lived tokens
+- Refresh token rotation
+
+### Security Headers
+| Header | Purpose |
+|--------|---------|
+| Content-Security-Policy | Mitigates XSS attacks |
+| X-Frame-Options (DENY) | Prevents clickjacking |
+| X-Content-Type-Options (nosniff) | Prevents MIME sniffing |
+| Strict-Transport-Security | Enforces HTTPS |
 
 ### Audit Logging
-- All login attempts logged
-- IP address tracking (X-Forwarded-For aware)
-- User agent logging
-- Success/failure status
+All security events are logged including:
+- Login attempts (success/failure)
+- Token refresh and rotation
+- Access denied (403) events
+- Authentication failures (401)
+- Profile updates
+- Token reuse detection
+- Unauthorized device detection
 
 ## API Endpoints
 
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
 | POST | `/api/v1/auth/login` | User login | No |
-| POST | `/api/v1/auth/register` | Registration | No |
+| POST | `/api/v1/auth/refresh` | Refresh access token | No (uses refresh token) |
 | POST | `/api/v1/auth/logout` | Logout | Yes |
 | GET | `/api/v1/auth/me` | Current user | Yes |
 

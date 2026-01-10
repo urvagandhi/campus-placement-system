@@ -37,7 +37,7 @@ public class StudentProfileDTO {
     private List<String> skills;
     private String resumeUrl;
     private Integer batchYear;
-    private String semester;
+    private Integer semester;
     private Integer projectsCount;
     private Integer internshipMonths;
     private List<String> certifications;

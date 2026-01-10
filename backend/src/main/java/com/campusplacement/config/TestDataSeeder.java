@@ -3,7 +3,6 @@ package com.campusplacement.config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,8 +37,14 @@ public class TestDataSeeder {
     private static final Logger log = LoggerFactory.getLogger(TestDataSeeder.class);
     private static final String TEST_PASSWORD = "password123";
 
+    /**
+     * DISABLED: Seeding is now handled by seed-data-v2.sql via Spring SQL init.
+     * The SQL file contains comprehensive multi-college hierarchy data.
+     *
+     * To re-enable for E2E tests only, uncomment the @Bean annotation.
+     */
     @SuppressWarnings("null")
-    @Bean
+    // @Bean // DISABLED - Using seed-data-v2.sql instead
     CommandLineRunner seedTestData(
             CollegeRepository collegeRepository,
             UserRepository userRepository,
@@ -47,9 +52,10 @@ public class TestDataSeeder {
         return args -> {
             log.info("Checking if test data needs to be seeded...");
 
-            // Check if test data already exists
-            if (userRepository.findByEmail("student@test.edu").isPresent()) {
-                log.info("Test data already exists, skipping seed.");
+            // Check if seed data from seed-data-v2.sql already exists
+            // If superadmin exists, the SQL seed data has already been loaded
+            if (userRepository.findByEmail("superadmin@placementpro.com").isPresent()) {
+                log.info("Seed data already exists (found superadmin@placementpro.com), skipping TestDataSeeder.");
                 return;
             }
 

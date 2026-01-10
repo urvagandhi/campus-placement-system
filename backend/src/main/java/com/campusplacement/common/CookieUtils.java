@@ -50,7 +50,7 @@ public class CookieUtils {
                 .secure(secureCookie)
                 .path("/")
                 .maxAge(maxAgeSec)
-                .sameSite("Strict");
+                .sameSite("Lax");
 
         if (cookieDomain != null && !cookieDomain.isEmpty()) {
             builder.domain(cookieDomain);
@@ -74,7 +74,7 @@ public class CookieUtils {
                 .secure(secureCookie)
                 .path("/api/v1/auth")
                 .maxAge(maxAgeSec)
-                .sameSite("Strict");
+                .sameSite("Lax");
 
         if (cookieDomain != null && !cookieDomain.isEmpty()) {
             builder.domain(cookieDomain);
@@ -94,7 +94,7 @@ public class CookieUtils {
                 .secure(secureCookie)
                 .path("/")
                 .maxAge(0)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
     }
 
@@ -109,7 +109,7 @@ public class CookieUtils {
                 .secure(secureCookie)
                 .path("/api/v1/auth")
                 .maxAge(0)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
     }
 

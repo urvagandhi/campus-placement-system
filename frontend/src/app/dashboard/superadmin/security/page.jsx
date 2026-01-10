@@ -14,6 +14,11 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+/**
+ * Security Operations Center Dashboard
+ * Restricted to SUPER_ADMIN only.
+ * Provides real-time security monitoring, anomaly detection, and audit log export.
+ */
 export default function SecurityDashboard() {
     const [stats, setStats] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -23,10 +28,11 @@ export default function SecurityDashboard() {
     const fetchData = async () => {
         try {
             setIsLoading(true);
+            setError('');
             const data = await getSecurityStats();
             setStats(data);
         } catch (err) {
-            setError('Failed to fetch security analytics.');
+            setError(err.message || 'Failed to fetch security analytics.');
             console.error(err);
         } finally {
             setIsLoading(false);
@@ -57,6 +63,26 @@ export default function SecurityDashboard() {
             </div>
         );
     }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center h-96 text-center">
+                <div className="bg-red-50 p-4 rounded-full mb-4">
+                    <ShieldAlert className="h-10 w-10 text-red-600" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Access Denied or Data Unavailable</h3>
+                <p className="text-gray-500 max-w-md mb-6">{error}</p>
+                <button
+                    onClick={fetchData}
+                    className="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition"
+                >
+                    Retry
+                </button>
+            </div>
+        );
+    }
+
+    if (!stats) return null;
 
     const StatCard = ({ title, value, icon: Icon, color, trend }) => (
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm transition-hover hover:shadow-md">
