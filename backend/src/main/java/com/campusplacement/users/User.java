@@ -132,6 +132,17 @@ public class User extends BaseEntity {
     private LocalDateTime deletedAt;
 
     /**
+     * Flag indicating the user must change their password on next login.
+     * Set to TRUE when:
+     * - Account is created by TPO/Coordinator (first-login flow)
+     * - Admin forces password reset
+     * Set to FALSE after successful password change.
+     */
+    @Column(name = "must_change_password")
+    @Builder.Default
+    private Boolean mustChangePassword = false;
+
+    /**
      * User's organizational assignments.
      * Defines WHERE they can operate and with what scope.
      */

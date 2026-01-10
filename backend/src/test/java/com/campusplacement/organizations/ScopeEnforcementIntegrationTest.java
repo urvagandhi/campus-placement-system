@@ -97,7 +97,6 @@ public class ScopeEnforcementIntegrationTest {
                                 .build());
 
                 // 4. Setup Students
-                @SuppressWarnings("null")
                 User studentUserCSE = userRepository.save(User.builder()
                                 .username("student_cse")
                                 .name("CSE Student")

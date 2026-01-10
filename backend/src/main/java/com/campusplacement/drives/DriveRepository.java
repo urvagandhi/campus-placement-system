@@ -87,4 +87,14 @@ public interface DriveRepository extends JpaRepository<PlacementDrive, Long> {
         Long countByCollegeIdAndStatus(
                         @Param("collegeId") Long collegeId,
                         @Param("status") String status);
+
+        /**
+         * Find active drives within a college.
+         * Active = status is OPEN or UPCOMING.
+         */
+        @Query("SELECT d FROM PlacementDrive d " +
+                        "WHERE d.college.id = :collegeId " +
+                        "AND d.status IN ('OPEN', 'UPCOMING') " +
+                        "ORDER BY d.driveDate ASC")
+        List<PlacementDrive> findActiveByCollegeId(@Param("collegeId") Long collegeId);
 }

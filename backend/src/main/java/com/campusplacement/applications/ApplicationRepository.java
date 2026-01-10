@@ -103,4 +103,25 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
         List<Application> findByDepartmentIdsAndYear(
                         @Param("departmentIds") Set<Long> departmentIds,
                         @Param("year") Integer year);
+
+        // ==================== Analytics Count Queries ====================
+
+        /**
+         * Count applications by drive ID.
+         */
+        long countByDriveId(Long driveId);
+
+        /**
+         * Count applications by drive ID and status.
+         */
+        @Query("SELECT COUNT(a) FROM Application a WHERE a.driveId = :driveId AND a.status = :status")
+        long countByDriveIdAndStatus(@Param("driveId") Long driveId, @Param("status") String status);
+
+        /**
+         * Count placed students by college ID.
+         */
+        @Query("SELECT COUNT(DISTINCT a.studentId) FROM Application a " +
+                        "JOIN PlacementDrive d ON a.driveId = d.id " +
+                        "WHERE d.college.id = :collegeId AND a.status = 'SELECTED'")
+        long countPlacedStudentsByCollegeId(@Param("collegeId") Long collegeId);
 }

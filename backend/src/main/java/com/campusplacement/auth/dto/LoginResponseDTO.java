@@ -63,4 +63,17 @@ public class LoginResponseDTO {
      * Role-based redirect URL for frontend navigation.
      */
     private String redirectUrl;
+
+    /**
+     * Flag indicating user must change their password.
+     * When true, frontend should redirect to password change page.
+     */
+    private Boolean mustChangePassword;
+
+    /**
+     * First-login token for password change.
+     * Provided when mustChangePassword is true.
+     * Used to complete password change without current password.
+     */
+    private String firstLoginToken;
 }

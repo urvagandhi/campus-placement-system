@@ -3,6 +3,8 @@ package com.campusplacement.users;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -78,4 +80,77 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * Finds all active users in a specific college with a specific role.
      */
     List<User> findByCollegeIdAndRoleAndIsActiveTrue(Long collegeId, UserRole role);
+
+    // ==================== Paginated Queries ====================
+
+    /**
+     * Finds all active users with pagination.
+     * Used by SUPER_ADMIN to view all users across colleges.
+     *
+     * @param pageable Pagination parameters
+     * @return Page of active users
+     */
+    Page<User> findByIsActiveTrue(Pageable pageable);
+
+    /**
+     * Finds all users in a specific college with pagination.
+     * Used by ADMIN to view users within their college.
+     *
+     * @param collegeId College ID for scope filtering
+     * @param pageable  Pagination parameters
+     * @return Page of users in the college
+     */
+    Page<User> findByCollegeId(Long collegeId, Pageable pageable);
+
+    /**
+     * Finds active users in a college with pagination.
+     *
+     * @param collegeId College ID for scope filtering
+     * @param pageable  Pagination parameters
+     * @return Page of active users in the college
+     */
+    Page<User> findByCollegeIdAndIsActiveTrue(Long collegeId, Pageable pageable);
+
+    /**
+     * Finds users by role within a college with pagination.
+     *
+     * @param collegeId College ID for scope filtering
+     * @param role      User role filter
+     * @param pageable  Pagination parameters
+     * @return Page of users matching criteria
+     */
+    Page<User> findByCollegeIdAndRole(Long collegeId, UserRole role, Pageable pageable);
+
+    /**
+     * Searches users by name or email within a college.
+     * Supports partial matching for autocomplete/search functionality.
+     *
+     * @param collegeId College ID for scope filtering
+     * @param search    Search term (matches name or email)
+     * @param pageable  Pagination parameters
+     * @return Page of matching users
+     */
+    @Query("SELECT u FROM User u WHERE u.college.id = :collegeId " +
+            "AND (LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<User> searchByCollegeId(
+            @Param("collegeId") Long collegeId,
+            @Param("search") String search,
+            Pageable pageable);
+
+    /**
+     * Counts users by college ID.
+     *
+     * @param collegeId College ID
+     * @return User count in the college
+     */
+    long countByCollegeId(Long collegeId);
+
+    /**
+     * Counts active users by college ID.
+     *
+     * @param collegeId College ID
+     * @return Active user count in the college
+     */
+    long countByCollegeIdAndIsActiveTrue(Long collegeId);
 }

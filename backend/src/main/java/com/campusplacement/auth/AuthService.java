@@ -51,6 +51,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final LoginAuditRepository loginAuditRepository;
     private final RefreshTokenService refreshTokenService;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final HttpServletRequest httpServletRequest;
@@ -137,7 +138,24 @@ public class AuthService {
 
         log.info("User {} logged in successfully with role {}", email, user.getRole());
 
-        // 9. Return response with both tokens
+        // 9. Check if password change is required
+        boolean mustChangePassword = Boolean.TRUE.equals(user.getMustChangePassword());
+        String firstLoginToken = null;
+
+        if (mustChangePassword) {
+            // Create a first-login token for the password change flow
+            PasswordResetToken resetToken = PasswordResetToken.builder()
+                    .user(user)
+                    .tokenType(PasswordResetToken.TokenType.FIRST_LOGIN)
+                    .expiresAt(java.time.LocalDateTime.now().plusHours(24))
+                    .requestedIp(getClientIpAddress())
+                    .build();
+            resetToken = passwordResetTokenRepository.save(resetToken);
+            firstLoginToken = resetToken.getToken();
+            log.info("First-login token created for user {} - password change required", user.getId());
+        }
+
+        // 10. Return response with both tokens
         return LoginResponseDTO.builder()
                 .token(token)
                 .refreshToken(refreshToken.getToken())
@@ -145,7 +163,9 @@ public class AuthService {
                 .userId(user.getId())
                 .role(user.getRole().name())
                 .collegeId(user.getCollege() != null ? user.getCollege().getId() : null)
-                .redirectUrl(redirectUrl)
+                .redirectUrl(mustChangePassword ? "/change-password" : redirectUrl)
+                .mustChangePassword(mustChangePassword)
+                .firstLoginToken(firstLoginToken)
                 .build();
     }
 

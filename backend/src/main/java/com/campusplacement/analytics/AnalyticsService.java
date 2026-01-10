@@ -81,6 +81,7 @@ public class AnalyticsService {
     /**
      * Get department-wise placement statistics with scope enforcement.
      */
+    @SuppressWarnings("null")
     @Transactional(readOnly = true)
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COORDINATOR')")
     public List<DepartmentStatsDTO> getDepartmentStats() {

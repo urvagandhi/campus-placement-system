@@ -63,6 +63,7 @@ public class CacheConfig {
      *
      * @return CacheManager configured with Caffeine
      */
+    @SuppressWarnings("null")
     @Bean
     public CacheManager cacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager("allowedDepartments");

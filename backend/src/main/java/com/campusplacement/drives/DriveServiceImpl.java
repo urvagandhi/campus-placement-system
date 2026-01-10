@@ -211,6 +211,7 @@ public class DriveServiceImpl implements DriveService {
         return mapToDTO(saved);
     }
 
+    @SuppressWarnings("null")
     @Override
     @Transactional
     @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
@@ -218,7 +219,6 @@ public class DriveServiceImpl implements DriveService {
         Long userId = getCurrentUserId();
         ScopeContext scope = scopeService.resolveScope(userId);
 
-        @SuppressWarnings("null")
         PlacementDrive drive = driveRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Drive not found"));
 
@@ -273,7 +273,6 @@ public class DriveServiceImpl implements DriveService {
         if (driveDTO.getDriveDate() != null)
             drive.setDriveDate(driveDTO.getDriveDate());
 
-        @SuppressWarnings("null")
         PlacementDrive updated = driveRepository.save(drive);
         return mapToDTO(updated);
     }
