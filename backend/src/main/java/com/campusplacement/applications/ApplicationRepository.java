@@ -124,4 +124,31 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
                         "JOIN PlacementDrive d ON a.driveId = d.id " +
                         "WHERE d.college.id = :collegeId AND a.status = 'SELECTED'")
         long countPlacedStudentsByCollegeId(@Param("collegeId") Long collegeId);
+
+        /**
+         * Count total placed students across all colleges.
+         */
+        @Query("SELECT COUNT(DISTINCT a.studentId) FROM Application a WHERE a.status = 'SELECTED'")
+        long countPlacedStudents();
+
+        /**
+         * Calculate average package by college ID.
+         */
+        @Query("SELECT AVG(d.packageLpa) FROM Application a " +
+                        "JOIN PlacementDrive d ON a.driveId = d.id " +
+                        "WHERE d.college.id = :collegeId AND a.status = 'SELECTED' " +
+                        "AND d.packageLpa IS NOT NULL")
+        Double calculateAveragePackageByCollegeId(@Param("collegeId") Long collegeId);
+
+        /**
+         * Get top hiring company names by selection count.
+         */
+        @Query(value = "SELECT c.name FROM applications a " +
+                        "JOIN placement_drives d ON a.drive_id = d.id " +
+                        "JOIN companies c ON d.company_id = c.id " +
+                        "WHERE a.status = 'SELECTED' " +
+                        "GROUP BY c.id, c.name " +
+                        "ORDER BY COUNT(a.id) DESC " +
+                        "LIMIT :limit", nativeQuery = true)
+        List<String> findTopHiringCompanyNames(@Param("limit") int limit);
 }

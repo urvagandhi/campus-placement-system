@@ -93,9 +93,4 @@ public class PlacementDrive extends BaseEntity {
     @Column(name = "is_remote")
     @Builder.Default
     private Boolean isRemote = false;
-
-    // TODO: Add relationship to Company
-    // @ManyToOne(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "company_id", insertable = false, updatable = false)
-    // private Company company;
 }

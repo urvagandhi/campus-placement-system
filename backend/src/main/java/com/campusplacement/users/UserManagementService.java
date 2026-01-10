@@ -59,6 +59,11 @@ public class UserManagementService {
         // Student belongs to coordinator's college
         College college = validateAndGetCollege(currentUser.getCollegeId());
 
+        // Validate coordinator's scope if assigning student to an org unit
+        if (dto.getOrganizationUnitId() != null) {
+            validateCoordinatorScope(currentUser, dto.getOrganizationUnitId());
+        }
+
         return createUserInternal(
                 dto.getName(),
                 dto.getEmail(),
@@ -70,12 +75,100 @@ public class UserManagementService {
                 currentUser.getUsername());
     }
 
+    /**
+     * Validates that the coordinator has authority to create users in the target
+     * org unit.
+     *
+     * <p>
+     * <strong>Scope Enforcement Rules:</strong>
+     * </p>
+     * <ul>
+     * <li>If coordinator has no specific assignment → can create anywhere in
+     * college</li>
+     * <li>If coordinator has COLLEGE scope → can create anywhere in college</li>
+     * <li>If coordinator has INSTITUTE scope → can create in their institute
+     * subtree</li>
+     * <li>If coordinator has DEPARTMENT scope → can only create in their
+     * department</li>
+     * </ul>
+     *
+     * @param coordinator     The current coordinator user details
+     * @param targetOrgUnitId The org unit where the new user will be assigned
+     * @throws AccessDeniedException if coordinator lacks scope for target org unit
+     */
+    @SuppressWarnings("null")
     private void validateCoordinatorScope(CustomUserDetails coordinator, Long targetOrgUnitId) {
-        // TODO: Implement rigorous subtree checking once OrganizationService is
-        // available
-        // For now, minimal check: If Coordinator has specific assignment, warn/block if
-        // strictly lower
-        // This is a placeholder for the strict hierarchical check required by the audit
+        Long coordinatorOrgUnitId = coordinator.getOrgUnitId();
+
+        // If coordinator has no specific org unit assignment, they have college-wide
+        // scope
+        if (coordinatorOrgUnitId == null) {
+            log.debug("Coordinator {} has college-wide scope", coordinator.getUsername());
+            return;
+        }
+
+        // If target is the same as coordinator's org unit, always allowed
+        if (coordinatorOrgUnitId.equals(targetOrgUnitId)) {
+            return;
+        }
+
+        // Get the coordinator's org unit to check scope level
+        OrganizationUnit coordinatorOrgUnit = organizationUnitRepository.findById(coordinatorOrgUnitId)
+                .orElseThrow(() -> new AccessDeniedException("Coordinator's organization unit not found"));
+
+        // Get target org unit
+        OrganizationUnit targetOrgUnit = organizationUnitRepository.findById(targetOrgUnitId)
+                .orElseThrow(() -> new IllegalArgumentException("Target organization unit not found"));
+
+        // Verify both are in the same college
+        if (!coordinatorOrgUnit.getCollege().getId().equals(targetOrgUnit.getCollege().getId())) {
+            throw new AccessDeniedException("Cannot create users in a different college");
+        }
+
+        // Check if target is within coordinator's subtree
+        boolean isInSubtree = isOrgUnitInSubtree(coordinatorOrgUnit, targetOrgUnit);
+
+        if (!isInSubtree) {
+            log.warn("Coordinator {} (orgUnit: {}) attempted to create user in orgUnit {} which is outside their scope",
+                    coordinator.getUsername(), coordinatorOrgUnitId, targetOrgUnitId);
+            throw new AccessDeniedException(
+                    "You can only create users within your organizational scope. " +
+                            "Target department is not in your hierarchy.");
+        }
+
+        log.debug("Coordinator {} scope validated for target org unit {}",
+                coordinator.getUsername(), targetOrgUnitId);
+    }
+
+    /**
+     * Checks if target org unit is within the subtree rooted at parent org unit.
+     * Uses parent traversal: target is in subtree if walking up its parent chain
+     * reaches the parent.
+     *
+     * @param parent The root of the subtree (coordinator's org unit)
+     * @param target The org unit to check
+     * @return true if target is in parent's subtree (or is parent itself)
+     */
+    private boolean isOrgUnitInSubtree(OrganizationUnit parent, OrganizationUnit target) {
+        // Same unit - always in subtree
+        if (parent.getId().equals(target.getId())) {
+            return true;
+        }
+
+        // Walk up the parent chain from target
+        OrganizationUnit current = target.getParent();
+        int maxDepth = 10; // Prevent infinite loops in case of data corruption
+        int depth = 0;
+
+        while (current != null && depth < maxDepth) {
+            if (current.getId().equals(parent.getId())) {
+                return true; // Found parent in the chain
+            }
+            current = current.getParent();
+            depth++;
+        }
+
+        return false; // Parent not found in chain
     }
 
     /**

@@ -128,6 +128,7 @@ public class AIInsightsService {
      */
     @Transactional(readOnly = true)
     public List<AggregatedInsight> getAggregatedDriveInsights() {
+        log.debug("Fetching aggregated drive insights");
         Long userId = getCurrentUserId();
         ScopeContext scope = scopeService.resolveScope(userId);
 
@@ -242,11 +243,19 @@ public class AIInsightsService {
                 .map(SkillTrendInsight::getSkill)
                 .collect(Collectors.toList());
 
+        // Calculate average package from placed students
+        Double avgPackage = applicationRepository.calculateAveragePackageByCollegeId(scope.collegeId());
+        if (avgPackage == null)
+            avgPackage = 0.0;
+
+        log.debug("College insights: {} students, {} placed, {:.2f}% rate, {:.2f} avg package",
+                totalStudents, placedCount, placementRate, avgPackage);
+
         return new AIInsightsController.CollegeInsights(
                 (int) totalStudents,
                 (int) placedCount,
                 placementRate,
-                0.0, // TODO: Calculate avg package
+                avgPackage,
                 topSkillsInDemand,
                 mostCommonSkillGaps);
     }
@@ -258,20 +267,51 @@ public class AIInsightsService {
      *
      * @return Platform-wide statistics
      */
+    @SuppressWarnings("null")
     @Transactional(readOnly = true)
     public AIInsightsController.PlatformInsights getPlatformInsights() {
+        log.info("Generating platform-wide insights for SUPER_ADMIN");
+
         // Platform-wide metrics
         long totalStudents = studentRepository.count();
         long totalDrives = driveRepository.count();
+        long placedStudents = applicationRepository.countPlacedStudents();
 
-        // TODO: Implement actual platform-wide aggregation
+        // Calculate overall placement rate
+        double overallPlacementRate = totalStudents > 0
+                ? (placedStudents * 100.0 / totalStudents)
+                : 0.0;
+
+        // Get top hiring companies (by number of selections)
+        List<String> topHiringCompanies = applicationRepository.findTopHiringCompanyNames(5);
+
+        // Get most in-demand skills across all drives
+        List<PlacementDrive> allDrives = driveRepository.findAll();
+        Map<String, Integer> skillDemand = new HashMap<>();
+        for (PlacementDrive drive : allDrives) {
+            for (String skill : parseSkills(drive.getRequiredSkills())) {
+                skillDemand.merge(skill.toLowerCase(), 1, Integer::sum);
+            }
+        }
+        List<String> topSkillsDemanded = skillDemand.entrySet().stream()
+                .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                .limit(10)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+
+        // Count unique colleges (distinct from drives)
+        long totalColleges = driveRepository.countDistinctColleges();
+
+        log.info("Platform insights: {} colleges, {} students, {} drives, {:.2f}% placement rate",
+                totalColleges, totalStudents, totalDrives, overallPlacementRate);
+
         return new AIInsightsController.PlatformInsights(
-                0, // totalColleges
+                (int) totalColleges,
                 (int) totalStudents,
                 (int) totalDrives,
-                0.0, // overallPlacementRate
-                List.of(),
-                List.of());
+                overallPlacementRate,
+                topHiringCompanies,
+                topSkillsDemanded);
     }
 
     // ==================== Private Helpers ====================

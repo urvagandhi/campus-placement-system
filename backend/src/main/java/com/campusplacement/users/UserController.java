@@ -80,8 +80,10 @@ public class UserController {
 
             @Parameter(description = "Filter by role") @RequestParam(required = false) String role) {
 
-        // Validate and cap page size
-        int validSize = Math.min(Math.max(1, size), MAX_PAGE_SIZE);
+        // Apply default if size is 0 or negative
+        int effectiveSize = size <= 0 ? DEFAULT_PAGE_SIZE : size;
+        // Cap at maximum page size
+        int validSize = Math.min(effectiveSize, MAX_PAGE_SIZE);
 
         // Create pageable with sorting
         Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;

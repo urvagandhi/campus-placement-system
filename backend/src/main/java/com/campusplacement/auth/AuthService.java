@@ -79,6 +79,7 @@ public class AuthService {
      * @throws AccountDeactivatedException if account is disabled
      * @throws CollegeInactiveException    if college is inactive
      */
+    @SuppressWarnings("null")
     @Transactional
     public LoginResponseDTO login(LoginRequestDTO request) {
         // 0. HONEYPOT CHECK (Anti-Automation)

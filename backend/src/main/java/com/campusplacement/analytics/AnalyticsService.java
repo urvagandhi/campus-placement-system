@@ -1,6 +1,5 @@
 package com.campusplacement.analytics;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.campusplacement.analytics.dto.CompanyStatsDTO;
 import com.campusplacement.analytics.dto.DepartmentStatsDTO;
 import com.campusplacement.analytics.dto.PlacementStatsDTO;
 import com.campusplacement.applications.Application;
@@ -139,6 +139,101 @@ public class AnalyticsService {
         return aggregateStats(applications, scope);
     }
 
+    /**
+     * Get company-wise placement statistics with scope enforcement.
+     *
+     * @return List of company statistics visible to the current user
+     */
+    @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
+    public List<CompanyStatsDTO> getCompanyStats() {
+        Long userId = getCurrentUserId();
+        ScopeContext scope = scopeService.resolveScope(userId);
+
+        log.debug("Fetching company stats for user {} with scope: {}", userId, scope.role());
+
+        List<Application> applications;
+        if (scope.isSuperAdmin()) {
+            applications = applicationRepository.findAll();
+        } else if (scope.hasFullCollegeAccess()) {
+            applications = applicationRepository.findByCollegeId(scope.collegeId());
+        } else {
+            if (scope.allowedDepartmentIds() == null || scope.allowedDepartmentIds().isEmpty()) {
+                return List.of();
+            }
+            applications = applicationRepository.findByStudentDepartmentIdInAndCollegeId(
+                    scope.allowedDepartmentIds(), scope.collegeId());
+        }
+
+        // Group applications by company
+        Map<Long, List<Application>> appsByCompany = applications.stream()
+                .filter(a -> a.getDrive() != null && a.getDrive().getCompany() != null)
+                .collect(Collectors.groupingBy(a -> a.getDrive().getCompany().getId()));
+
+        return appsByCompany.entrySet().stream()
+                .map(entry -> calculateCompanyStats(entry.getKey(), entry.getValue()))
+                .sorted((a, b) -> Long.compare(b.getSelectedCandidates(), a.getSelectedCandidates()))
+                .collect(Collectors.toList());
+    }
+
+    private CompanyStatsDTO calculateCompanyStats(Long companyId, List<Application> applications) {
+        if (applications.isEmpty()) {
+            return CompanyStatsDTO.builder()
+                    .companyId(companyId)
+                    .companyName("Unknown")
+                    .build();
+        }
+
+        // Get company info from first application
+        var company = applications.get(0).getDrive().getCompany();
+
+        // Count distinct drives
+        long totalDrives = applications.stream()
+                .map(a -> a.getDrive().getId())
+                .distinct()
+                .count();
+
+        long totalApplications = applications.size();
+
+        long selectedCandidates = applications.stream()
+                .filter(a -> "SELECTED".equalsIgnoreCase(a.getStatus()))
+                .count();
+
+        double selectionRate = totalApplications > 0
+                ? (selectedCandidates * 100.0 / totalApplications)
+                : 0.0;
+
+        // Calculate packages from selected applications
+        List<Application> selectedApps = applications.stream()
+                .filter(a -> "SELECTED".equalsIgnoreCase(a.getStatus()))
+                .filter(a -> a.getDrive().getPackageLpa() != null)
+                .collect(Collectors.toList());
+
+        Double avgPackage = selectedApps.isEmpty() ? 0.0
+                : selectedApps.stream()
+                        .mapToDouble(a -> a.getDrive().getPackageLpa())
+                        .average()
+                        .orElse(0.0);
+
+        Double highestPackage = selectedApps.isEmpty() ? 0.0
+                : selectedApps.stream()
+                        .mapToDouble(a -> a.getDrive().getPackageLpa())
+                        .max()
+                        .orElse(0.0);
+
+        return CompanyStatsDTO.builder()
+                .companyId(companyId)
+                .companyName(company.getName())
+                .industry(company.getIndustry())
+                .totalDrives(totalDrives)
+                .totalApplications(totalApplications)
+                .selectedCandidates(selectedCandidates)
+                .selectionRate(selectionRate)
+                .averagePackage(avgPackage)
+                .highestPackage(highestPackage)
+                .build();
+    }
+
     // ==================== Private Helper Methods ====================
 
     private PlacementStatsDTO calculateStatsForAllColleges() {
@@ -231,10 +326,12 @@ public class AnalyticsService {
     }
 
     private PlacementStatsDTO aggregateStats(List<Application> applications, ScopeContext scope) {
-        Set<Long> studentIds = applications.stream()
+        // Count unique students from applications (for reference)
+        Set<Long> uniqueStudentIds = applications.stream()
                 .map(a -> a.getStudent().getId())
                 .collect(Collectors.toSet());
 
+        // Calculate total students based on scope
         long totalStudents;
         if (scope.isSuperAdmin()) {
             totalStudents = studentRepository.count();
@@ -249,7 +346,31 @@ public class AnalyticsService {
             }
         }
 
-        return buildStatsDTO(applications, new ArrayList<>(studentIds.size()));
+        // Build stats using calculated totalStudents
+        long totalApplications = applications.size();
+
+        Map<String, Long> statusCounts = applications.stream()
+                .collect(Collectors.groupingBy(Application::getStatus, Collectors.counting()));
+
+        long placedStudents = statusCounts.getOrDefault("SELECTED", 0L);
+        long shortlistedStudents = statusCounts.getOrDefault("SHORTLISTED", 0L);
+
+        double placementRate = totalStudents > 0 ? (placedStudents * 100.0 / totalStudents) : 0.0;
+
+        log.debug("Aggregated stats: {} total students, {} unique applicants, {} placed",
+                totalStudents, uniqueStudentIds.size(), placedStudents);
+
+        return PlacementStatsDTO.builder()
+                .totalStudents(totalStudents)
+                .totalApplications(totalApplications)
+                .placedStudents(placedStudents)
+                .shortlistedStudents(shortlistedStudents)
+                .placementRate(placementRate)
+                .averagePackage(calculateAveragePackage(applications))
+                .highestPackage(calculateHighestPackage(applications))
+                .lowestPackage(calculateLowestPackage(applications))
+                .companiesVisited(countCompanies(applications))
+                .build();
     }
 
     private Double calculateAveragePackage(List<Application> applications) {

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.campusplacement.analytics.dto.CompanyStatsDTO;
 import com.campusplacement.analytics.dto.DepartmentStatsDTO;
 import com.campusplacement.analytics.dto.PlacementStatsDTO;
 import com.campusplacement.common.ApiResponse;
@@ -18,6 +19,11 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * REST controller for placement analytics.
+ *
+ * <p>
+ * Provides scope-enforced analytics endpoints for placement statistics,
+ * department stats, batch analysis, and company-wise performance.
+ * </p>
  */
 @RestController
 @RequestMapping(Constants.API_VERSION + "/analytics")
@@ -30,7 +36,7 @@ public class AnalyticsController {
      * Get overall placement statistics.
      */
     @GetMapping("/overview")
-    @PreAuthorize("hasAnyRole('TPO', 'ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<PlacementStatsDTO>> getOverallStats() {
         PlacementStatsDTO stats = analyticsService.getOverallStats();
         return ResponseEntity.ok(ApiResponse.success(stats));
@@ -40,7 +46,7 @@ public class AnalyticsController {
      * Get department-wise statistics.
      */
     @GetMapping("/departments")
-    @PreAuthorize("hasAnyRole('TPO', 'ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<List<DepartmentStatsDTO>>> getDepartmentStats() {
         List<DepartmentStatsDTO> stats = analyticsService.getDepartmentStats();
         return ResponseEntity.ok(ApiResponse.success(stats));
@@ -50,7 +56,7 @@ public class AnalyticsController {
      * Get statistics for a specific batch year.
      */
     @GetMapping("/batch/{year}")
-    @PreAuthorize("hasAnyRole('TPO', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN')")
     public ResponseEntity<ApiResponse<PlacementStatsDTO>> getBatchStats(
             @PathVariable Integer year) {
         PlacementStatsDTO stats = analyticsService.getBatchStats(year);
@@ -59,11 +65,12 @@ public class AnalyticsController {
 
     /**
      * Get company-wise placement statistics.
+     * Shows hiring metrics per company: drives, applications, selections, rates.
      */
     @GetMapping("/companies")
-    @PreAuthorize("hasAnyRole('TPO', 'ADMIN')")
-    public ResponseEntity<ApiResponse<Object>> getCompanyStats() {
-        // TODO: Implement company-wise stats
-        return ResponseEntity.ok(ApiResponse.success(null));
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<List<CompanyStatsDTO>>> getCompanyStats() {
+        List<CompanyStatsDTO> stats = analyticsService.getCompanyStats();
+        return ResponseEntity.ok(ApiResponse.success(stats));
     }
 }

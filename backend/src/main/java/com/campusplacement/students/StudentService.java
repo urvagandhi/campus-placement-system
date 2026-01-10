@@ -223,13 +223,14 @@ public class StudentService {
     @Transactional(readOnly = true)
     @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
     public List<StudentProfileDTO> getEligibleStudentsForDrive(Long driveId) {
-        log.info("Fetching eligible students for drive: {}", driveId);
+        CustomUserDetails currentUser = getCurrentUser();
+        Long userId = currentUser.getId();
+        log.info("Fetching eligible students for drive: {} by user: {} ({})",
+                driveId, userId, currentUser.getRole());
 
-        Long userId = getCurrentUserId();
         ScopeContext scope = scopeService.resolveScope(userId);
-
-        // Validate user has access to this drive
-        // (Drive eligibility service will handle this internally)
+        log.debug("User scope: isSuperAdmin={}, hasFullCollegeAccess={}, collegeId={}",
+                scope.isSuperAdmin(), scope.hasFullCollegeAccess(), scope.collegeId());
 
         try {
             // Use DriveEligibilityService to get eligible students (already scope-filtered)

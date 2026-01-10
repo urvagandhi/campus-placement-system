@@ -189,6 +189,7 @@ public class PasswordResetController {
                     .body(ApiResponse.error("Current password is required"));
         }
 
+        @SuppressWarnings("null")
         User user = userRepository.findById(currentUser.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 

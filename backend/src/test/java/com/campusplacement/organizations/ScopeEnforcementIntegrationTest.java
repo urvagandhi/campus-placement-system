@@ -113,7 +113,6 @@ public class ScopeEnforcementIntegrationTest {
                 profileCSE.setCgpa(8.5);
                 studentRepository.save(profileCSE);
 
-                @SuppressWarnings("null")
                 User studentUserECE = userRepository.save(User.builder()
                                 .username("student_ece")
                                 .name("ECE Student")

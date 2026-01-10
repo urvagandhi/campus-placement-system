@@ -97,4 +97,11 @@ public interface DriveRepository extends JpaRepository<PlacementDrive, Long> {
                         "AND d.status IN ('OPEN', 'UPCOMING') " +
                         "ORDER BY d.driveDate ASC")
         List<PlacementDrive> findActiveByCollegeId(@Param("collegeId") Long collegeId);
+
+        /**
+         * Count distinct colleges that have placement drives.
+         * Used for platform-wide analytics.
+         */
+        @Query("SELECT COUNT(DISTINCT d.college.id) FROM PlacementDrive d")
+        long countDistinctColleges();
 }

@@ -64,6 +64,7 @@ public class PasswordResetService {
      * @param requestIp IP address of the creator
      * @return the generated token
      */
+    @SuppressWarnings("null")
     @Transactional
     public PasswordResetToken createFirstLoginToken(User user, String requestIp) {
         // Invalidate any existing first-login tokens
@@ -97,6 +98,7 @@ public class PasswordResetService {
      * @return the generated token, or null if user not found (silent failure for
      *         security)
      */
+    @SuppressWarnings("null")
     @Transactional
     public PasswordResetToken createForgotPasswordToken(String email, String requestIp) {
         return userRepository.findByEmail(email)
@@ -154,6 +156,7 @@ public class PasswordResetService {
      * @param userId the user ID
      * @return true if password change is required
      */
+    @SuppressWarnings("null")
     @Transactional(readOnly = true)
     public boolean isPasswordChangeRequired(Long userId) {
         return userRepository.findById(userId)
@@ -206,6 +209,7 @@ public class PasswordResetService {
      */
     @Transactional
     public PasswordResetToken forcePasswordReset(Long userId, String requestIp) {
+        @SuppressWarnings("null")
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
