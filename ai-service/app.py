@@ -28,11 +28,16 @@ Technology Stack:
 API Versioning: All endpoints use /api/v1 prefix for consistency.
 """
 
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import uvicorn
+
+# Load environment variables from .env file
+load_dotenv()
 
 from services.eligibility_service import EligibilityService
 from services.skill_gap_service import SkillGapService
@@ -41,6 +46,11 @@ from services.ranking_service import ranking_service, RankingRequest, RankingRes
 from services.insights_service import insights_service, InsightsRequest, InsightsResponse
 from schemas.eligibility import EligibilityRequest, EligibilityResponse
 from schemas.skill_gap import SkillGapRequest, SkillGapResponse
+
+# Environment configuration
+DEBUG = os.getenv("DEBUG", "false").lower() == "true"
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:8080,http://localhost:3000").split(",")
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -63,20 +73,23 @@ app = FastAPI(
     """,
     version="2.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    debug=DEBUG
 )
 
-# CORS configuration
+# CORS configuration from environment
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8080",  # Java backend
-        "http://localhost:3000",  # Next.js frontend (for direct calls if needed)
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Gemini configuration
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+USE_GEMINI = os.getenv("USE_GEMINI_ENHANCEMENT", "false").lower() == "true"
 
 # Initialize services
 eligibility_service = EligibilityService()
@@ -88,7 +101,16 @@ skill_gap_service = SkillGapService()
 @app.get("/health", tags=["Health"])
 async def health_check():
     """Health check endpoint for monitoring."""
-    return {"status": "healthy", "service": "ai-service", "version": "2.0.0"}
+    return {
+        "status": "healthy",
+        "service": "ai-service",
+        "version": "2.0.0",
+        "gemini": {
+            "configured": bool(GEMINI_API_KEY),
+            "enabled": USE_GEMINI,
+            "model": GEMINI_MODEL if GEMINI_API_KEY else None
+        }
+    }
 
 
 # ==================== Resume Parsing Endpoints ====================
@@ -221,9 +243,13 @@ async def get_aggregated_insights(request: InsightsRequest):
 # ==================== Main Entry Point ====================
 
 if __name__ == "__main__":
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", 8000))
+
     uvicorn.run(
         "app:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True
+        host=host,
+        port=port,
+        reload=DEBUG,
+        log_level=LOG_LEVEL.lower()
     )

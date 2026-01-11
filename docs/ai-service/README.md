@@ -507,15 +507,54 @@ sequenceDiagram
 
 ### Environment Variables
 
-```bash
-# Required
-AI_SERVICE_HOST=localhost
-AI_SERVICE_PORT=8000
+Create a `.env` file in the `ai-service/` directory:
 
-# Optional
+```bash
+# ===========================================
+# Server Configuration
+# ===========================================
+HOST=0.0.0.0
+PORT=8000
+DEBUG=false
 LOG_LEVEL=INFO
-CORS_ORIGINS=http://localhost:8080,http://localhost:3000
+
+# ===========================================
+# CORS Configuration
+# ===========================================
+ALLOWED_ORIGINS=http://localhost:8080,http://localhost:3000
+
+# ===========================================
+# Google Gemini API (Optional)
+# ===========================================
+# Get your API key from: https://aistudio.google.com/app/apikey
+GEMINI_API_KEY=your-api-key-here
+GEMINI_MODEL=gemini-2.0-flash
+GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/models
+
+# ===========================================
+# Feature Flags
+# ===========================================
+USE_GEMINI_ENHANCEMENT=false
+
+# ===========================================
+# Rate Limiting
+# ===========================================
+RATE_LIMIT_REQUESTS=100
+RATE_LIMIT_PERIOD_SECONDS=60
 ```
+
+### Environment Variables Reference
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `HOST` | No | `0.0.0.0` | Server bind address |
+| `PORT` | No | `8000` | Server port |
+| `DEBUG` | No | `false` | Enable debug mode |
+| `LOG_LEVEL` | No | `INFO` | Logging level (DEBUG, INFO, WARNING, ERROR) |
+| `ALLOWED_ORIGINS` | No | `localhost:8080,3000` | Comma-separated CORS origins |
+| `GEMINI_API_KEY` | No | - | Google Gemini API key |
+| `GEMINI_MODEL` | No | `gemini-2.0-flash` | Gemini model to use |
+| `USE_GEMINI_ENHANCEMENT` | No | `false` | Enable Gemini-powered features |
 
 ### Running the Service
 
@@ -524,11 +563,35 @@ CORS_ORIGINS=http://localhost:8080,http://localhost:3000
 cd ai-service
 pip install -r requirements.txt
 
+# Copy environment file and configure
+cp .env.example .env
+# Edit .env with your settings
+
 # Development mode (with hot reload)
 uvicorn app:app --reload --host 0.0.0.0 --port 8000
 
+# Or using Python directly (uses .env settings)
+python app.py
+
 # Production mode
 uvicorn app:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+### Health Check Response
+
+The health endpoint now includes Gemini configuration status:
+
+```json
+{
+  "status": "healthy",
+  "service": "ai-service",
+  "version": "2.0.0",
+  "gemini": {
+    "configured": true,
+    "enabled": true,
+    "model": "gemini-2.0-flash"
+  }
+}
 ```
 
 ### API Documentation

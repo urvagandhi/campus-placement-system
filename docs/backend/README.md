@@ -496,37 +496,83 @@ public SecurityFilterChain filterChain(HttpSecurity http) {
 
 ## Configuration
 
+### Environment File Setup
+
+Create a `.env` file in the `backend/` directory:
+
+```bash
+# ===========================================
+# Database Configuration (Supabase PostgreSQL)
+# ===========================================
+DATABASE_URL=jdbc:postgresql://db.YOUR_PROJECT_REF.supabase.co:5432/postgres
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=your-password
+
+# ===========================================
+# JWT Configuration
+# ===========================================
+JWT_SECRET=YourSecureSecretKeyMinimum256BitsLong
+JWT_ISSUER=PlacementPro
+JWT_AUDIENCE=PlacementPro-App
+
+# ===========================================
+# Google Gemini API
+# ===========================================
+GEMINI_API_KEY=your-gemini-api-key
+
+# ===========================================
+# Spring Profiles
+# ===========================================
+SPRING_PROFILES_ACTIVE=dev
+
+# ===========================================
+# Cookie Configuration
+# ===========================================
+COOKIE_SECURE=false
+COOKIE_DOMAIN=
+```
+
+### Environment Variables Reference
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DATABASE_URL` | Yes | - | PostgreSQL JDBC connection URL |
+| `DATABASE_USERNAME` | Yes | `postgres` | Database username |
+| `DATABASE_PASSWORD` | Yes | - | Database password |
+| `JWT_SECRET` | Yes | - | JWT signing key (min 256 bits) |
+| `JWT_ISSUER` | No | `PlacementPro` | JWT issuer claim |
+| `JWT_AUDIENCE` | No | `PlacementPro-App` | JWT audience claim |
+| `GEMINI_API_KEY` | No | - | Google Gemini API key for AI features |
+| `SPRING_PROFILES_ACTIVE` | No | `dev` | Active Spring profile |
+| `COOKIE_SECURE` | No | `false` | Set `true` for HTTPS in production |
+
 ### Application Properties
 
 ```yaml
-# Database
+# application.yml (key configurations)
+
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/placement_db
-    username: ${DB_USER}
-    password: ${DB_PASS}
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
 
-# JWT
 app:
   jwt:
     secret: ${JWT_SECRET}
     access-expiration-ms: 900000      # 15 minutes
     refresh-expiration-days: 7
 
-# AI Service
+# Google Gemini API
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  base-url: https://generativelanguage.googleapis.com/v1beta/models
+  model: gemini-2.0-flash
+
+# Python AI Service (Legacy)
 ai-service:
   base-url: http://localhost:8000/api/v1
 ```
-
-### Environment Variables
-
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `DB_URL` | PostgreSQL connection | `jdbc:postgresql://localhost:5432/placement_db` |
-| `DB_USER` | Database username | `postgres` |
-| `DB_PASS` | Database password | `secret` |
-| `JWT_SECRET` | JWT signing key | 64+ character string |
-| `AI_SERVICE_URL` | Python AI service | `http://localhost:8000` |
 
 ---
 
@@ -535,6 +581,10 @@ ai-service:
 ```bash
 # Navigate to backend
 cd backend
+
+# Copy environment file and configure
+cp .env.example .env
+# Edit .env with your credentials
 
 # Compile
 mvn clean compile
@@ -559,4 +609,3 @@ java -jar target/campus-placement-0.0.1-SNAPSHOT.jar
 - [Error Handling](error-handling.md)
 - [Database Schema](../database/ER-DIAGRAM.md)
 - [API Specifications](../api-specs.md)
-
