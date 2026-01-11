@@ -1,6 +1,7 @@
 package com.campusplacement.applications;
 
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -164,14 +165,15 @@ public class ApplicationServiceImpl implements ApplicationService {
         eligibilityService.validateApplication(student.getId(), drive.getId());
 
         Application application = Application.builder()
-                .student(student)
-                .driveId(drive.getId())
-                .drive(drive)
-                .status("APPLIED")
-                .appliedAt(LocalDateTime.now())
-                .resumeUrl(request.getResumeUrl() != null ? request.getResumeUrl() : student.getResumeUrl())
-                .coverLetter(request.getCoverLetter())
-                .build();
+            .student(student)
+            .studentId(student.getId())
+            .driveId(drive.getId())
+            .drive(drive)
+            .status(ApplicationStatusType.PENDING.name())
+            .appliedAt(LocalDateTime.now())
+            .resumeUrl(request.getResumeUrl() != null ? request.getResumeUrl() : student.getResumeUrl())
+            .coverLetter(request.getCoverLetter())
+            .build();
 
         application = applicationRepository.save(application);
 
@@ -181,7 +183,10 @@ public class ApplicationServiceImpl implements ApplicationService {
     @Override
     @Transactional
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'COORDINATOR')")
-    public ApplicationDTO updateApplicationStatus(Long id, String status) {
+    public ApplicationDTO updateApplicationStatus(Long id, ApplicationStatusType status) {
+        if (status == null) {
+            throw new IllegalArgumentException("Application status is required");
+        }
         Long userId = getCurrentUserId();
         ScopeContext scope = scopeService.resolveScope(userId);
 
@@ -215,10 +220,16 @@ public class ApplicationServiceImpl implements ApplicationService {
             }
         }
 
-        application.setStatus(status);
-        if ("SHORTLISTED".equalsIgnoreCase(status)) {
+        ApplicationStatusType currentStatus = ApplicationStatusType.from(application.getStatus());
+        if (!currentStatus.canTransitionTo(status)) {
+            throw new IllegalArgumentException("Invalid application status transition from "
+                    + currentStatus.name() + " to " + status.name());
+        }
+
+        application.setStatus(status.name());
+        if (status == ApplicationStatusType.SHORTLISTED) {
             application.setShortlistedAt(LocalDateTime.now());
-        } else if ("SELECTED".equalsIgnoreCase(status)) {
+        } else if (status == ApplicationStatusType.SELECTED) {
             application.setSelectedAt(LocalDateTime.now());
         }
 
@@ -241,11 +252,12 @@ public class ApplicationServiceImpl implements ApplicationService {
             throw new AccessDeniedException("Cannot withdraw another student's application");
         }
 
-        if (!List.of("APPLIED", "SHORTLISTED").contains(application.getStatus())) {
+        ApplicationStatusType currentStatus = ApplicationStatusType.from(application.getStatus());
+        if (!EnumSet.of(ApplicationStatusType.PENDING, ApplicationStatusType.SHORTLISTED).contains(currentStatus)) {
             throw new IllegalStateException("Cannot withdraw application in status: " + application.getStatus());
         }
 
-        application.setStatus("WITHDRAWN");
+        application.setStatus(ApplicationStatusType.WITHDRAWN.name());
         // application.setWithdrawnAt(LocalDateTime.now()); // Field not in entity yet
 
         applicationRepository.save(application);

@@ -43,6 +43,9 @@ This project provides a complete skeleton for a campus placement management syst
 ## 📁 Project Structure
 
 ```
+## 📁 Project Structure
+
+```
 Placement Management/
 ├── backend/                    # Java Spring Boot Application
 │   ├── src/main/java/com/campusplacement/
@@ -75,6 +78,9 @@ Placement Management/
 │   └── package.json
 │
 ├── docs/                       # Documentation
+│   ├── backend/               # Backend implementation details
+│   ├── frontend/              # Frontend implementation details
+│   ├── functional-specs/      # Functional specifications
 │   ├── architecture.md
 │   └── api-specs.md
 │
@@ -250,9 +256,39 @@ npm run test:e2e
 
 ## 📚 Related Documentation
 
-- [Architecture Documentation](docs/architecture.md)
-- [API Specifications](docs/api-specs.md)
-- [Implementation Plan](IMPLEMENTATION_PLAN.md)
+### Core Documentation
+- [Architecture Documentation](architecture.md)
+- [API Specifications](api-specs.md)
+- [Security Model](security.md)
+- [Testing Strategy](testing.md)
+
+### Functional Specifications
+- [Applications](functional-specs/applications.md) - Job application lifecycle
+- [Placement Drives](functional-specs/drives.md) - Drive management & status workflow
+- [Eligibility](functional-specs/eligibility.md) - Scoring algorithm & AI integration
+- [Students](functional-specs/students.md) - Profile management & dual-ownership model
+- [Companies](functional-specs/companies.md) - Company profiles & statistics
+- [Analytics](functional-specs/analytics.md) - Reporting & insights
+- [Multi-Tenancy](functional-specs/multi-tenancy.md) - Scope resolution & isolation
+- [Authentication](functional-specs/authentication.md) - JWT + refresh token flow
+
+### Technical Documentation
+- [ER Diagram](database/ER-DIAGRAM.md) - Complete database schema visualization
+- [Business Workflows](workflows/BUSINESS-WORKFLOWS.md) - Sequence diagrams for all flows
+- [Backend Implementation](backend/README.md) - Module architecture
+  - [Authentication Implementation](backend/README.md#auth-module) - JWT & Security Config
+  - [Authorization Implementation](backend/README.md#security-module) - RBAC & Method Security
+  - [Error Handling](backend/error-handling.md) - Global exception strategies
+- [AI Service](ai-service/README.md) - Python FastAPI service documentation
+
+### Developer Guides
+- [Backend README](backend/README.md)
+- [Frontend README](frontend/README.md)
+
+### Agent Configuration
+- [Placement Rules](../.agent/rules/placement-rules.md) - AI coding agent rules
+- [Code Review Workflow](../.agent/workflows/code-review.md) - Review checklist
+- [Feature Implementation](../.agent/workflows/feature-implementation.md) - Development workflow
 
 ## 📄 License
 

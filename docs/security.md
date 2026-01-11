@@ -197,3 +197,17 @@ All security events are logged to `login_audit` table:
 | Apply after deadline | 400 | Bad Request |
 | Duplicate application | 409 | Conflict |
 
+---
+
+## Related Documentation
+
+### Feature Documentation
+- [Authentication](features/authentication.md) - JWT auth flow with refresh tokens
+- [Multi-Tenancy](features/multi-tenancy.md) - College isolation and scope resolution
+- [Applications](features/applications.md) - Application lifecycle security
+
+### Technical Documentation
+- [Backend Overview](backend/README.md) - Security module architecture
+- [Business Workflows](workflows/BUSINESS-WORKFLOWS.md) - Auth sequence diagrams
+- [ER Diagram](database/ER-DIAGRAM.md) - Security-related tables (login_audit, refresh_tokens)
+

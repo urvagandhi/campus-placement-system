@@ -52,15 +52,12 @@ backend/
 ├── src/main/java/com/campusplacement/
 │   ├── CampusPlacementApplication.java   # Main entry point
 │   ├── auth/                             # Authentication module
-│   │   ├── AuthController.java           # Login/logout endpoints
-│   │   ├── AuthService.java              # Auth business logic
-│   │   ├── dto/                          # Request/response DTOs
-│   │   └── exception/                    # Auth-specific exceptions
+│   │   ├── AuthController.java
+│   │   ├── AuthService.java
+│   │   └── dto/
 │   ├── security/                         # Security configuration
-│   │   ├── JwtTokenProvider.java         # JWT generation/validation
-│   │   ├── JwtAuthenticationFilter.java  # Request filter
-│   │   ├── SecurityConfig.java           # Security configuration
-│   │   └── CustomUserDetailsService.java # User loading
+│   │   ├── JwtTokenProvider.java
+│   │   └── SecurityConfig.java
 │   ├── users/                            # User management
 │   ├── students/                         # Student profiles
 │   ├── companies/                        # Company management
@@ -68,15 +65,17 @@ backend/
 │   ├── applications/                     # Job applications
 │   ├── eligibility/                      # Eligibility scoring
 │   ├── colleges/                         # Multi-college support
+│   ├── analytics/                        # Analytics module
+│   ├── ai/                               # AI Service Client
+│   ├── organizations/                    # Organization hierarchy
 │   ├── config/                           # App configuration
-│   │   └── TestDataSeeder.java           # Dev/test data seeding
 │   └── common/                           # Shared utilities
-│       ├── ApiResponse.java              # Standard response wrapper
-│       └── GlobalExceptionHandler.java   # Centralized error handling
+│       ├── ApiResponse.java
+│       └── GlobalExceptionHandler.java
 ├── src/main/resources/
 │   ├── application.yml                   # Main configuration
 │   └── schema.sql                        # Database schema
-└── src/test/java/com/campusplacement/   # Test classes
+└── src/test/java/com/campusplacement/    # Test classes
 ```
 
 ## API Endpoints
@@ -233,3 +232,5 @@ mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Xdebug -Xrunjdwp:transport=
 - [Architecture](../docs/architecture.md)
 - [API Specifications](../docs/api-specs.md)
 - [Main README](../docs/README.md)
+- [Backend Implementation Details](../docs/backend/README.md)
+- [Functional Specifications](../docs/functional-specs/README.md)

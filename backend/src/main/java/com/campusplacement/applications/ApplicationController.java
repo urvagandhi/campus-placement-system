@@ -92,11 +92,12 @@ public class ApplicationController {
      * </p>
      */
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINATOR', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<ApplicationDTO>> updateStatus(
             @PathVariable Long id,
             @RequestParam String status) {
-        ApplicationDTO updated = applicationService.updateApplicationStatus(id, status);
+        ApplicationStatusType targetStatus = ApplicationStatusType.from(status);
+        ApplicationDTO updated = applicationService.updateApplicationStatus(id, targetStatus);
         return ResponseEntity.ok(ApiResponse.success(updated, "Status updated"));
     }
 

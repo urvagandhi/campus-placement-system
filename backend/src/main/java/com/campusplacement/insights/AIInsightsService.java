@@ -52,6 +52,7 @@ public class AIInsightsService {
     private final StudentRepository studentRepository;
     private final DriveRepository driveRepository;
     private final ApplicationRepository applicationRepository;
+    private final com.campusplacement.ai.gemini.GeminiService geminiService;
 
     // ==================== Student Insights ====================
 
@@ -110,12 +111,18 @@ public class AIInsightsService {
         // Calculate readiness score
         double readiness = strongSkills.isEmpty() ? 50.0 : Math.min(100.0, 60.0 + (strongSkills.size() * 8.0));
 
+        // Use AI advice if available, otherwise fallback
+        String careerAdvice = geminiService.generateCareerRecommendations(student);
+        if (careerAdvice.contains("unavailable")) {
+            careerAdvice = generateCareerAdvice(strongSkills, skillsToImprove);
+        }
+
         return new AIInsightsController.StudentInsights(
                 readiness,
                 strongSkills,
                 skillsToImprove,
                 certifications,
-                generateCareerAdvice(strongSkills, skillsToImprove));
+                careerAdvice);
     }
 
     // ==================== Coordinator Insights ====================

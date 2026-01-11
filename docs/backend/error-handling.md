@@ -405,3 +405,17 @@ public LoginResponseDTO login(LoginRequestDTO request) {
     }
 }
 ```
+
+---
+
+## Related Documentation
+
+### Project Documentation
+- [Backend Overview](../README.md) - Module architecture with common module
+- [API Specifications](../../api-specs.md) - Response format specifications
+- [Security Model](../../security.md) - Security event logging
+
+### Feature Documentation
+- [Applications](../../functional-specs/applications.md) - Application error scenarios
+- [Eligibility](../../functional-specs/eligibility.md) - Eligibility check errors
+- [Authentication](auth/authentication.md) - Auth error handling

@@ -315,3 +315,60 @@ void student_cannot_access_other_college_data() {
         .andExpect(status().isForbidden());
 }
 ```
+
+## Organization Hierarchy
+
+Within each college, there's a hierarchical structure:
+
+```mermaid
+graph TD
+    A[College] --> B[University/Institute]
+    B --> C1[Department 1]
+    B --> C2[Department 2]
+    B --> C3[Department 3]
+    C1 --> D1[Users]
+    C2 --> D2[Users]
+    C3 --> D3[Users]
+```
+
+### OrganizationUnit Types
+
+| Type | Level | Example |
+|------|-------|----------|
+| UNIVERSITY | Top | "State University" |
+| INSTITUTE | Middle | "Institute of Technology" |
+| DEPARTMENT | Leaf | "Computer Science", "Electronics" |
+
+### Scope Resolution
+
+The `OrganizationScopeService` resolves user's operational scope:
+
+```java
+@Service
+public class OrganizationScopeService {
+
+    public ScopeContext getCurrentUserScope() {
+        CustomUserDetails user = getCurrentUser();
+
+        return ScopeContext.builder()
+            .collegeId(user.getCollegeId())
+            .organizationUnitId(user.getOrganizationUnitId())
+            .scopeLevel(determineScopeLevel(user))
+            .build();
+    }
+}
+```
+
+### Scope Levels
+
+| Level | Description | Use Case |
+|-------|-------------|----------|
+| SELF | Only own data | Student viewing profile |
+| CHILDREN | Direct children | Coordinator in department |
+| SUBTREE | Full descendant tree | Admin across departments |
+
+## Related Documentation
+
+- [ER Diagram](../database/ER-DIAGRAM.md) - Database schema with organization tables
+- [Backend Overview](../backend/README.md) - Module architecture
+- [Business Workflows](../workflows/BUSINESS-WORKFLOWS.md) - Scope resolution workflow

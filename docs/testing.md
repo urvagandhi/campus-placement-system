@@ -8,10 +8,22 @@ The project includes multiple layers of testing:
 
 | Layer | Framework | Location | Tests |
 |-------|-----------|----------|-------|
-| Backend Unit | JUnit 5 | `backend/src/test/java` | 34 |
+| Backend Unit | JUnit 5 + Mockito | `backend/src/test/java` | 34+ |
 | Backend Integration | Testcontainers | `backend/src/test/java` | 50+ |
-| Frontend Unit | Jest | `frontend/__tests__` | 47 |
-| Frontend E2E | Playwright | `frontend/e2e` | 22 |
+| Frontend Unit | Jest + RTL | `frontend/__tests__` | 47+ |
+| Frontend E2E | Playwright | `frontend/e2e` | 22+ |
+
+## Test Categories
+
+### By Feature
+
+| Feature | Unit Tests | Integration Tests |
+|---------|------------|-------------------|
+| Authentication | `AuthServiceTest` | `AuthControllerIntegrationTest` |
+| Applications | `ApplicationServiceTest` | `ApplicationControllerIntegrationTest` |
+| Drives | `DriveServiceTest` | `DriveControllerIntegrationTest` |
+| Eligibility | `EligibilityServiceTest` | `EligibilityIntegrationTest` |
+| Multi-Tenancy | `ScopeServiceTest` | `SecurityIntegrationTest` |
 
 ## Backend Testing
 

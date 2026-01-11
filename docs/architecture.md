@@ -215,3 +215,28 @@ Never hard-code or duplicate college/institute data.
 | `app/layout.js` | Global layout (fonts, metadata) |
 | `app/dashboard/layout.jsx` | Shared dashboard shell |
 | `app/dashboard/{role}/layout.js` | Role guard + role-specific sidebar |
+
+---
+
+## Related Documentation
+
+### Core Documentation
+- [Security Model](security.md) - RBAC and data ownership
+- [API Specifications](api-specs.md) - REST API contracts
+- [Testing Strategy](testing.md) - Test coverage guide
+
+### Feature Documentation
+- [Applications](features/applications.md) - Job application lifecycle
+- [Placement Drives](features/drives.md) - Drive management
+- [Eligibility](features/eligibility.md) - Scoring algorithm
+- [Students](features/students.md) - Profile management
+- [Companies](features/companies.md) - Company management
+- [Analytics](features/analytics.md) - Reporting
+- [Multi-Tenancy](features/multi-tenancy.md) - College isolation
+- [Authentication](features/authentication.md) - JWT auth flow
+
+### Technical Documentation
+- [ER Diagram](database/ER-DIAGRAM.md) - Complete database schema
+- [Business Workflows](workflows/BUSINESS-WORKFLOWS.md) - Sequence diagrams
+- [Backend Overview](backend/README.md) - Module architecture
+- [AI Service](ai-service/README.md) - Python FastAPI docs

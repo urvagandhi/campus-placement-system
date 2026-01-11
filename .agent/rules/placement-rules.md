@@ -214,41 +214,114 @@ Failure to comply with any rule renders the task incomplete.
 
 | Layer       | Technology                                      |
 |-------------|-------------------------------------------------|
-| Backend     | Java 21+, Spring Boot 3.x, PostgreSQL, Hibernate |
-| Frontend    | Next.js 16+, React, Tailwind CSS                |
-| AI Service  | Python, FastAPI                                 |
-| Auth        | JWT-based authentication                        |
+| Backend     | Java 21, Spring Boot 3.2.x, PostgreSQL 15+, Hibernate 6 |
+| Frontend    | Next.js 14+, React 18, Tailwind CSS 3.x         |
+| AI Service  | Python 3.10+, FastAPI 0.100+, Pydantic 2.x      |
+| Auth        | JWT + Refresh Tokens, RBAC with 4 roles         |
 
 ### Project Structure
 
 ```
 Placement Management/
 ├── backend/          # Spring Boot REST API
+│   └── src/main/java/com/placement/
+│       ├── auth/             # JWT authentication
+│       ├── security/         # Spring Security config
+│       ├── applications/     # Job application lifecycle
+│       ├── drives/           # Placement drive management
+│       ├── students/         # Student profile management
+│       ├── companies/        # Company management
+│       ├── organizations/    # Multi-tenancy & scope
+│       ├── eligibility/      # Eligibility checking
+│       ├── ai/               # AI service integration
+│       ├── analytics/        # Reporting & statistics
+│       └── common/           # Shared utilities
 ├── frontend/         # Next.js web application
+│   └── src/
+│       ├── app/              # App Router pages
+│       ├── components/       # Reusable components
+│       ├── context/          # Auth & state providers
+│       ├── hooks/            # Custom React hooks
+│       ├── services/         # API service layer
+│       └── utils/            # Utility functions
 ├── ai-service/       # Python FastAPI AI service
-├── docs/             # Project documentation
-└── .placementrules      # This file - agent rules
+│   ├── app.py               # FastAPI application
+│   ├── models/              # Pydantic data models
+│   ├── schemas/             # Request/Response schemas
+│   └── services/            # Business logic services
+├── docs/             # Comprehensive documentation
+│   ├── features/            # Feature-specific docs
+│   ├── database/            # ER diagrams & schema
+│   ├── workflows/           # Business workflow diagrams
+│   └── ai-service/          # AI service documentation
+└── .agent/           # Agent rules & workflows
 ```
+
+### Role Hierarchy
+
+```
+SUPER_ADMIN > ADMIN > COORDINATOR > STUDENT
+```
+
+| Role | Scope | Permissions |
+|------|-------|-------------|
+| STUDENT | Own profile | View drives, apply, manage profile |
+| COORDINATOR | Department | Manage drives, view students, process apps |
+| ADMIN | College | All coordinator + manage users, companies |
+| SUPER_ADMIN | System | All admin + cross-college operations |
 
 ### Coding Conventions
 
 #### Java/Spring Boot (Backend)
 
-- Package structure: `com.campusplacement.<module>`
-- Use constructor injection for dependencies
+- Package structure: `com.placement.<module>`
+- Use constructor injection for dependencies (`@RequiredArgsConstructor`)
 - Apply `@Transactional` at service layer
 - DTOs for API contracts, Entities for persistence
 - Validation via Jakarta Bean Validation annotations
 - Logging via SLF4J with appropriate log levels
+- **Service Interface Pattern**: All services use interface + implementation (e.g., `DriveService` + `DriveServiceImpl`)
+- **Scope Enforcement**: Use `OrganizationScopeService` for multi-tenant queries
+- **RBAC**: Use `@PreAuthorize("hasRole('COORDINATOR')")` on controllers
+
+#### Multi-Tenancy Rules
+
+- **Every query** must filter by `college_id` (or appropriate scope)
+- Use `ScopeContext` from `OrganizationScopeService.getCurrentUserScope()`
+- Never expose data across college boundaries
+- Repository methods should include scope parameters:
+
+```java
+@Query("SELECT d FROM Drive d WHERE d.college.id = :collegeId")
+Page<Drive> findByCollegeId(@Param("collegeId") Long collegeId, Pageable pageable);
+```
+
+#### AI Integration Pattern
+
+- Backend calls AI service via `AIClient` (never frontend → AI directly)
+- Use Circuit Breaker + Retry patterns
+- Cache AI results in database
+- Always have algorithmic fallback when AI unavailable:
+
+```java
+@CircuitBreaker(name = "aiService", fallbackMethod = "fallbackScore")
+public AIResponse callAI(Request request) { ... }
+
+public AIResponse fallbackScore(Request request, Exception e) {
+    return calculateAlgorithmic(request);  // Fallback
+}
+```
 
 #### Next.js/React (Frontend)
 
-- Use App Router (Next.js 16+)
+- Use App Router (Next.js 14+)
 - Components in `components/` directory
-- API calls via centralized service layer
-- State management via React hooks and context
+- API calls via centralized service layer (`services/api.js`)
+- State management via React hooks and context (`AuthProvider`, `useAuth`)
 - Tailwind CSS for styling with consistent design tokens
 - Handle loading/error/empty states for all async operations
+- **Protected Routes**: Use `ProtectedRoute` component for authenticated pages
+- **Role-Based UI**: Conditionally render based on `user.role` from `useAuth()`
 
 #### Python/FastAPI (AI Service)
 
@@ -256,6 +329,32 @@ Placement Management/
 - Pydantic models for request/response validation
 - Async handlers where beneficial
 - Proper exception handling with HTTPException
+- **Scoring Algorithm**: Rule-first, AI-second approach
+- **Weights**: CGPA (40%), Skills (35%), Experience (25%)
+- **Health endpoint**: Always expose `GET /health`
+
+### Key Entity Relationships
+
+```
+College 1--* OrganizationUnit (UNIVERSITY > INSTITUTE > DEPARTMENT)
+College 1--* User (via college_id)
+User 1--1 StudentProfile (for STUDENT role)
+College 1--* Company
+College 1--* PlacementDrive
+PlacementDrive *--* OrganizationUnit (eligible departments)
+StudentProfile 1--* Application
+PlacementDrive 1--* Application
+Application 1--1 EligibilityResult
+```
+
+### Application Status Flow
+
+```
+PENDING → SHORTLISTED → SELECTED
+                     ↘ REJECTED
+PENDING → REJECTED
+PENDING/SHORTLISTED → WITHDRAWN (student action)
+```
 
 ### API Design Standards
 

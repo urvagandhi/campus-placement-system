@@ -211,6 +211,12 @@ Apply to a drive
 ### PATCH `/api/v1/applications/{id}/status`
 Update application status (TPO/Admin)
 
+Allowed statuses (validated server-side): PENDING, SHORTLISTED, REJECTED, SELECTED, WITHDRAWN.
+Valid transitions:
+- PENDING → SHORTLISTED | REJECTED | WITHDRAWN
+- SHORTLISTED → SELECTED | REJECTED | WITHDRAWN
+- SELECTED/REJECTED/WITHDRAWN → no further transitions (idempotent updates only)
+
 ### DELETE `/api/v1/applications/{id}/withdraw`
 Withdraw application
 

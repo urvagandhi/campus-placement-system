@@ -5,24 +5,29 @@
 **PlacementPro** is a modular placement management system:
 
 - **Backend**: Java 21, Spring Boot 3.2.x, PostgreSQL 15+, Maven
-- **Frontend**: Next.js, React, TypeScript, Tailwind CSS, Node 18+
-- **AI Service**: Python 3.10+, FastAPI (decision-support only, not autonomous)
+- **Frontend**: Next.js 14+, React 18, Tailwind CSS 3.x, Node 18+
+- **AI Service**: Python 3.10+, FastAPI 0.100+ (decision-support only, not autonomous)
 - **Pattern**: Controllers → Services (interface+implementation) → Repositories → Database
-- **Auth**: JWT tokens with role-based access control (STUDENT, COORDINATOR, ADMIN, SUPER_ADMIN)
+- **Auth**: JWT + Refresh Tokens with role-based access control (STUDENT, COORDINATOR, ADMIN, SUPER_ADMIN)
 
 ## Backend Modules & Responsibilities
 
-| Module                              | Purpose                                                               |
-| ----------------------------------- | --------------------------------------------------------------------- |
-| `auth/`                             | JWT authentication, token generation/validation                       |
-| `security/`                         | Spring Security config, JWT filters, user details                     |
-| `users/`, `students/`, `companies/` | Entity lifecycle management                                           |
-| `drives/`                           | Placement drive lifecycle (DriveService interface + DriveServiceImpl) |
-| `applications/`                     | Job applications with scope-aware RBAC queries                        |
-| `eligibility/`                      | Eligibility scoring (calls AI service, caches results)                |
-| `analytics/`                        | Placement statistics & reporting                                      |
-| `ai/`                               | HTTP client (AIClient) for Python AI service                          |
-| `common/`                           | ApiResponse wrapper, GlobalExceptionHandler, utilities                |
+| Module           | Purpose                                                               |
+| ---------------- | --------------------------------------------------------------------- |
+| `auth/`          | JWT authentication, token generation/validation, refresh tokens       |
+| `security/`      | Spring Security config, JWT filters, user details, scope security     |
+| `users/`         | User entity and management                                            |
+| `students/`      | Student profile management (dual-ownership model)                     |
+| `companies/`     | Company profiles and management                                       |
+| `drives/`        | Placement drive lifecycle (DriveService interface + DriveServiceImpl) |
+| `applications/`  | Job applications with scope-aware RBAC queries                        |
+| `organizations/` | OrganizationUnit hierarchy, UserAssignment, ScopeContext              |
+| `eligibility/`   | Eligibility scoring (rule-first, AI-second approach)                  |
+| `analytics/`     | Placement statistics & reporting                                      |
+| `ai/`            | AIClient with Circuit Breaker + Retry patterns                        |
+| `colleges/`      | College entity (top-level tenant)                                     |
+| `common/`        | ApiResponse wrapper, GlobalExceptionHandler, utilities                |
+| `config/`        | Application configuration beans                                       |
 
 ## Critical Implementation Patterns
 
@@ -156,12 +161,41 @@ curl http://localhost:8000/health  # Health check
 
 ## Important Files & References
 
+### Documentation
+
 - **Architecture**: [docs/architecture.md](docs/architecture.md)
 - **Security model**: [docs/security.md](docs/security.md)
 - **Testing strategy**: [docs/testing.md](docs/testing.md)
-- **Backend README**: [backend/README.md](backend/README.md)
-- **Frontend README**: [frontend/README.md](frontend/README.md)
-- **AI Service**: [ai-service/app.py](ai-service/app.py)
+- **API Specifications**: [docs/api-specs.md](docs/api-specs.md)
+
+### Feature Documentation
+
+- **Applications**: [docs/features/applications.md](docs/features/applications.md)
+- **Placement Drives**: [docs/features/drives.md](docs/features/drives.md)
+- **Eligibility**: [docs/features/eligibility.md](docs/features/eligibility.md)
+- **Students**: [docs/features/students.md](docs/features/students.md)
+- **Companies**: [docs/features/companies.md](docs/features/companies.md)
+- **Analytics**: [docs/features/analytics.md](docs/features/analytics.md)
+- **Multi-Tenancy**: [docs/features/multi-tenancy.md](docs/features/multi-tenancy.md)
+- **Authentication**: [docs/features/authentication.md](docs/features/authentication.md)
+
+### Technical Documentation
+
+- **ER Diagram**: [docs/database/ER-DIAGRAM.md](docs/database/ER-DIAGRAM.md)
+- **Business Workflows**: [docs/workflows/BUSINESS-WORKFLOWS.md](docs/workflows/BUSINESS-WORKFLOWS.md)
+- **Backend Overview**: [backend/docs/BACKEND-OVERVIEW.md](backend/docs/BACKEND-OVERVIEW.md)
+- **AI Service**: [docs/ai-service/README.md](docs/ai-service/README.md)
+
+### READMEs
+
+- **Backend**: [backend/README.md](backend/README.md)
+- **Frontend**: [frontend/README.md](frontend/README.md)
+
+### Agent Rules
+
+- **Placement Rules**: [.agent/rules/placement-rules.md](.agent/rules/placement-rules.md)
+- **Code Review Workflow**: [.agent/workflows/code-review.md](.agent/workflows/code-review.md)
+- **Feature Implementation**: [.agent/workflows/feature-implementation.md](.agent/workflows/feature-implementation.md)
 
 ## When Stuck
 
@@ -170,8 +204,11 @@ curl http://localhost:8000/health  # Health check
 3. **RBAC/queries**: → Study `ApplicationRepository` (excellent scope-aware query examples)
 4. **Frontend auth**: → `AuthProvider.jsx` → `AuthContext.jsx` → `useAuth()` hook
 5. **Adding new role**: Update `Role` enum → create `@PreAuthorize` rules → update UI dashboards
+6. **Multi-tenancy**: → `OrganizationScopeService` for scope resolution
+7. **AI Integration**: → `AIClient` with Circuit Breaker pattern
+8. **Feature workflows**: → `.agent/workflows/feature-implementation.md`
 
 ---
 
-**Last Updated**: January 10, 2026
+**Last Updated**: January 11, 2026
 **Stack Versions**: Java 21, Spring Boot 3.2.x, Node 18+, Python 3.10+, PostgreSQL 15+

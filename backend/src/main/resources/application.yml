@@ -117,7 +117,14 @@ resilience4j:
         timeoutDuration: 3s
 
 # AI Service Configuration
-# The AI module acts strictly as a decision-support system
+# Connects to Google Gemini API
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  base-url: https://generativelanguage.googleapis.com/v1beta/models
+  model: gemini-1.5-flash
+  timeout: 30000
+
+# Legacy Python AI Service (Optional/Deprecated)
 ai-service:
   base-url: http://localhost:8000/api/v1
   timeout: 30000

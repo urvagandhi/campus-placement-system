@@ -38,8 +38,8 @@ frontend/
 ├── src/
 │   ├── app/                              # Next.js App Router pages
 │   │   ├── page.jsx                      # Landing page
-│   │   ├── login/page.jsx                # Login page
-│   │   ├── forbidden/page.jsx            # Access denied page
+│   │   ├── login/                        # Login page
+│   │   ├── forbidden/                    # Access denied page
 │   │   ├── not-found.jsx                 # 404 page
 │   │   └── dashboard/                    # Protected dashboard routes
 │   │       ├── student/                  # Student dashboard
@@ -48,43 +48,18 @@ frontend/
 │   │       └── superadmin/               # Super admin dashboard
 │   ├── components/
 │   │   ├── auth/                         # Auth components
-│   │   │   └── ProtectedRoute.jsx        # Route protection HOC
 │   │   ├── layout/                       # Layout components
-│   │   │   ├── StudentNavbar.jsx
-│   │   │   ├── StudentSidebar.jsx
-│   │   │   ├── CoordinatorNavbar.jsx
-│   │   │   ├── AdminNavbar.jsx
-│   │   │   └── SuperAdminNavbar.jsx
 │   │   ├── ui/                           # Reusable UI components
-│   │   │   ├── Button.jsx
-│   │   │   ├── Input.jsx
-│   │   │   ├── Card.jsx
-│   │   │   ├── Badge.jsx
-│   │   │   ├── Modal.jsx
-│   │   │   └── Logo.jsx
 │   │   └── forms/                        # Form components
 │   ├── context/
-│   │   ├── AuthContext.jsx               # Auth context definition
 │   │   └── AuthProvider.jsx              # Auth state management
 │   ├── hooks/
 │   │   └── useAuth.js                    # Auth hook
-│   ├── services/
-│   │   ├── api.js                        # Generic API client
-│   │   └── authService.js                # Auth-specific API calls
-│   └── utils/
-│       ├── auth.js                       # Auth utilities
-│       └── helpers.js                    # General helpers
+│   ├── services/                         # API services
+│   └── utils/                            # Helper functions
 ├── __tests__/                            # Jest unit tests
-│   ├── app/login/LoginPage.test.jsx
-│   ├── context/AuthProvider.test.jsx
-│   └── services/authService.test.js
 ├── e2e/                                  # Playwright E2E tests
-│   └── auth/
-│       ├── login.spec.ts
-│       └── security.spec.ts
-├── jest.config.js                        # Jest configuration
-├── jest.setup.js                         # Jest setup
-├── playwright.config.ts                  # Playwright configuration
+├── public/                               # Static assets
 └── package.json
 ```
 
@@ -229,3 +204,5 @@ The frontend handles various error scenarios:
 - [Architecture](../docs/architecture.md)
 - [API Specifications](../docs/api-specs.md)
 - [Main README](../docs/README.md)
+- [Frontend Implementation Details](../docs/frontend/README.md)
+- [Functional Specifications](../docs/functional-specs/README.md)

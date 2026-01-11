@@ -49,7 +49,7 @@ public class Application extends BaseEntity {
 
     @Column(nullable = false)
     @Builder.Default
-    private String status = "PENDING"; // PENDING, SHORTLISTED, REJECTED, SELECTED, WITHDRAWN
+    private String status = ApplicationStatusType.PENDING.name();
 
     @Column(name = "applied_at", nullable = false)
     private LocalDateTime appliedAt;

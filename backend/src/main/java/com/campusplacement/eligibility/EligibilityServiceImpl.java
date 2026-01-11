@@ -9,13 +9,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.campusplacement.ai.AIClient;
 import com.campusplacement.common.exception.ResourceNotFoundException;
 import com.campusplacement.drives.DriveRepository;
 import com.campusplacement.drives.PlacementDrive;
@@ -57,24 +57,17 @@ public class EligibilityServiceImpl implements EligibilityService {
     private final EligibilityRepository eligibilityRepository;
     private final StudentRepository studentRepository;
     private final DriveRepository driveRepository;
+    private final com.campusplacement.ai.gemini.GeminiService geminiService;
 
-    /**
-     * AI client for enhanced eligibility scoring.
-     * Used for:
-     * - Skill gap analysis with NLP
-     * - Resume-based competency scoring
-     * - Predictive placement success analysis
-     *
-     * Currently integrated via getAIEnhancedScore() method.
-     * Set aiEnhancementEnabled=true to activate AI scoring.
-     */
-    @SuppressWarnings("unused") // Used in getAIEnhancedScore() - future AI integration
-    private final AIClient aiClient;
-
-    // Feature flag for AI enhancement (can be externalized to config)
-    private static final boolean AI_ENHANCEMENT_ENABLED = false;
+    // Feature flag for AI enhancement
+    @Value("${gemini.api-key:#{null}}")
+    private String geminiApiKey;
 
     // Scoring weights
+    private static final double ALGO_SCORE_WEIGHT = 0.70;
+    private static final double AI_SCORE_WEIGHT = 0.30;
+
+    // Algorithmic sub-weights
     private static final double CGPA_WEIGHT = 0.40;
     private static final double SKILLS_WEIGHT = 0.35;
     private static final double EXPERIENCE_WEIGHT = 0.25;
@@ -183,7 +176,7 @@ public class EligibilityServiceImpl implements EligibilityService {
 
     /**
      * Calculates eligibility and saves result.
-     * Applies "Rule-first, AI-second" principle.
+     * Applies "Rule-first, AI-second" principle with hybrid scoring.
      */
     private EligibilityResultDTO calculateAndSaveEligibility(StudentProfile student, PlacementDrive drive) {
         List<String> reasons = new ArrayList<>();
@@ -220,16 +213,34 @@ public class EligibilityServiceImpl implements EligibilityService {
             }
         }
 
-        // ==================== SCORING (For Eligible Students) ====================
+        // ==================== HYBRID SCORING (For Eligible Students)
+        // ====================
 
+        // 1. Calculate Algorithmic Score
         double cgpaScore = calculateCgpaScore(student, drive);
         double skillsScore = calculateSkillsScore(student, drive, skillGaps);
         double experienceScore = calculateExperienceScore(student);
 
-        // Weighted total score
-        double totalScore = (cgpaScore * CGPA_WEIGHT) +
+        double algoScore = (cgpaScore * CGPA_WEIGHT) +
                 (skillsScore * SKILLS_WEIGHT) +
                 (experienceScore * EXPERIENCE_WEIGHT);
+
+        double totalScore = algoScore;
+
+        // 2. Enhance with AI Score (if enabled and key present)
+        if (isEligible && geminiApiKey != null && !geminiApiKey.isEmpty()) {
+            try {
+                double aiScore = geminiService.calculateEligibilityScore(student, drive);
+                // Hybrid Score Formula: 70% Algo + 30% AI
+                totalScore = (algoScore * ALGO_SCORE_WEIGHT) + (aiScore * AI_SCORE_WEIGHT);
+                log.debug("AI Enhanced Score for student {}: Algo={}, AI={}, Final={}",
+                        student.getId(), algoScore, aiScore, totalScore);
+            } catch (Exception e) {
+                log.warn("AI scoring failed for student {}: {}. Using algorithmic score.",
+                        student.getId(), e.getMessage());
+                // Fallback to purely algorithmic score (already set)
+            }
+        }
 
         // Additional eligibility based on score threshold
         if (isEligible && totalScore < ELIGIBILITY_THRESHOLD) {

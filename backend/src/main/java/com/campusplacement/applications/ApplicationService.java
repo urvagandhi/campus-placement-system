@@ -18,7 +18,7 @@ public interface ApplicationService {
 
     ApplicationDTO applyToDrive(ApplyRequestDTO request);
 
-    ApplicationDTO updateApplicationStatus(Long id, String status);
+    ApplicationDTO updateApplicationStatus(Long id, ApplicationStatusType status);
 
     void withdrawApplication(Long id);
 }
