@@ -6,70 +6,107 @@ import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
 import Table from '@/components/ui/Table';
-import { Mail, Search, User, UserPlus } from 'lucide-react';
-import { useState } from 'react';
-
-// Mock Data
-const MOCK_STUDENTS = [
-    { id: 1, name: 'Rahul Sharma', email: 'rahul@student.edu', department: 'Computer Science', cgpa: 8.5, status: 'Placed' },
-    { id: 2, name: 'Priya Patel', email: 'priya@student.edu', department: 'Information Technology', cgpa: 9.1, status: 'Placed' },
-    { id: 3, name: 'Amit Singh', email: 'amit@student.edu', department: 'Mechanical Engineering', cgpa: 7.8, status: 'Unplaced' },
-    { id: 4, name: 'Sneha Gupta', email: 'sneha@student.edu', department: 'Electronics', cgpa: 8.2, status: 'Unplaced' },
-    { id: 5, name: 'Vikram Malhotra', email: 'vikram@student.edu', department: 'Computer Science', cgpa: 7.5, status: 'Placed' },
-];
+import api from '@/services/api';
+import { Loader2, Mail, Search, User, UserPlus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
 export default function StudentOnboardingPage() {
+    const [students, setStudents] = useState([]);
+    const [departments, setDepartments] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('ALL'); // ALL | Placed | Pending
+    const [statusFilter, setStatusFilter] = useState('ALL');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [newStudent, setNewStudent] = useState({
         name: '',
         email: '',
-        department: '',
-        enrollmentId: ''
+        password: '',
+        phoneNumber: '',
+        organizationUnitId: ''
     });
 
-    const filteredStudents = MOCK_STUDENTS.filter(student => {
-        const matchesSearch =
-            student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            student.department.toLowerCase().includes(searchTerm.toLowerCase());
+    const fetchData = async () => {
+        try {
+            setLoading(true);
+            const [studentsRes, deptRes] = await Promise.all([
+                api.students.getAll(),
+                api.organizations.getDepartments()
+            ]);
 
+            if (studentsRes.success) {
+                setStudents(studentsRes.data || []);
+            }
+            if (deptRes.success) {
+                setDepartments(deptRes.data || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch data:', error);
+            toast.error('Failed to load data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const filteredStudents = students.filter(student => {
+        const matchesSearch =
+            student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            student.departmentName?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const isPlaced = student.isPlaced || student.placementStatus === 'PLACED';
         const matchesStatus =
             statusFilter === 'ALL' ||
-            (statusFilter === 'Placed' && student.status === 'Placed') ||
-            (statusFilter === 'Pending' && student.status === 'Unplaced');
+            (statusFilter === 'Placed' && isPlaced) ||
+            (statusFilter === 'Pending' && !isPlaced);
 
         return matchesSearch && matchesStatus;
     });
 
-    // CORRECTED COLUMN DEFINITIONS
     const columns = [
         { header: 'Student Name', accessor: 'name' },
         { header: 'Email', accessor: 'email' },
-        { header: 'Department', accessor: 'department' },
+        { header: 'Department', accessor: 'departmentName' },
         { header: 'CGPA', accessor: 'cgpa' },
         {
             header: 'Status',
-            accessor: 'status', // Must be a string key
+            accessor: 'placementStatus',
             render: (status) => (
-                <Badge variant={status === 'Placed' ? 'success' : 'warning'}>
-                    {status}
+                <Badge variant={status === 'PLACED' ? 'success' : 'warning'}>
+                    {status === 'PLACED' ? 'Placed' : 'Unplaced'}
                 </Badge>
             )
         },
     ];
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
-            setIsModalOpen(false);
-            setNewStudent({ name: '', email: '', department: '', enrollmentId: '' });
-            alert('Student onboarded successfully (Mock)');
-        }, 1000);
+        setSubmitting(true);
+        try {
+            const payload = {
+                ...newStudent,
+                organizationUnitId: newStudent.organizationUnitId ? parseInt(newStudent.organizationUnitId) : null
+            };
+            const response = await api.students.create(payload);
+            if (response.success) {
+                toast.success('Student onboarded successfully');
+                fetchData();
+                setIsModalOpen(false);
+                setNewStudent({ name: '', email: '', password: '', phoneNumber: '', organizationUnitId: '' });
+            } else {
+                toast.error(response.message || 'Failed to onboard student');
+            }
+        } catch (error) {
+            console.error('Create student error:', error);
+            toast.error(error.message || 'Failed to onboard student');
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const handleChange = (e) => {
@@ -90,7 +127,6 @@ export default function StudentOnboardingPage() {
             </div>
 
             <Card className="border border-gray-100">
-                {/* UI Matches Manage Drives: Search on Left, Filters on Right/Next */}
                 <div className="flex flex-col md:flex-row gap-4 mb-6">
                     <div className="flex-1 relative">
                         <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -120,7 +156,13 @@ export default function StudentOnboardingPage() {
                     </div>
                 </div>
 
-                <Table columns={columns} data={filteredStudents} />
+                {loading ? (
+                    <div className="flex justify-center py-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+                    </div>
+                ) : (
+                    <Table columns={columns} data={filteredStudents} emptyMessage="No students found" />
+                )}
             </Card>
 
             <Modal
@@ -149,33 +191,38 @@ export default function StudentOnboardingPage() {
                         icon={Mail}
                     />
                     <Input
-                        label="Enrollment ID"
-                        name="enrollmentId"
-                        value={newStudent.enrollmentId}
+                        label="Password"
+                        name="password"
+                        type="password"
+                        value={newStudent.password}
                         onChange={handleChange}
-                        placeholder="e.g. 2023CS101"
+                        placeholder="Initial password"
                         required
+                    />
+                    <Input
+                        label="Phone Number"
+                        name="phoneNumber"
+                        value={newStudent.phoneNumber}
+                        onChange={handleChange}
+                        placeholder="e.g. +91 9876543210"
                     />
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
                         <select
-                            name="department"
-                            value={newStudent.department}
+                            name="organizationUnitId"
+                            value={newStudent.organizationUnitId}
                             onChange={handleChange}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            required
                         >
                             <option value="">Select Department</option>
-                            <option value="Computer Science">Computer Science</option>
-                            <option value="Information Technology">Information Technology</option>
-                            <option value="Mechanical Engineering">Mechanical Engineering</option>
-                            <option value="Civil Engineering">Civil Engineering</option>
-                            <option value="Electronics">Electronics</option>
+                            {departments.map(dept => (
+                                <option key={dept.id} value={dept.id}>{dept.name}</option>
+                            ))}
                         </select>
                     </div>
 
                     <div className="pt-4 flex gap-3">
-                        <Button type="submit" loading={loading} className="flex-1">Register Student</Button>
+                        <Button type="submit" loading={submitting} className="flex-1">Register Student</Button>
                         <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)} className="flex-1">Cancel</Button>
                     </div>
                 </form>

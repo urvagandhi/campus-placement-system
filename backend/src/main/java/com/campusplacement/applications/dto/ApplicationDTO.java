@@ -19,6 +19,9 @@ public class ApplicationDTO {
     private Long id;
     private Long studentId;
     private String studentName;
+    private String studentDepartment;
+    private Double studentCgpa;
+    private Double studentScore; // AI/Algorithmic Score
     private Long driveId;
     private String driveTitle;
     private String companyName;

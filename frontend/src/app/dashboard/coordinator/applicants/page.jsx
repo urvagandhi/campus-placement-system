@@ -3,44 +3,75 @@
 import Badge from '@/components/ui/Badge';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
-import { Ban, CheckCircle, Search, User } from 'lucide-react';
+import { applicationsApi } from '@/services/api';
+import { Ban, CheckCircle, Search, User, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-
-// Mock Data
-const INITIAL_STUDENTS = [
-    { id: 1, name: 'Aditya Sharma', dept: 'CSE', cgpa: 9.2, score: 95, status: 'Applied', drive: 'Google' },
-    { id: 2, name: 'Priya Patel', dept: 'IT', cgpa: 8.8, score: 88, status: 'Shortlisted', drive: 'Google' },
-    { id: 3, name: 'Rahul Singh', dept: 'ECE', cgpa: 7.9, score: 72, status: 'Applied', drive: 'Microsoft' },
-    { id: 4, name: 'Anjali Gupta', dept: 'CSE', cgpa: 8.5, score: 82, status: 'Rejected', drive: 'Microsoft' },
-    { id: 5, name: 'Karthik R', dept: 'MECH', cgpa: 7.2, score: 65, status: 'Applied', drive: 'Amazon' },
-    { id: 6, name: 'Sneha Reddy', dept: 'CSE', cgpa: 9.0, score: 91, status: 'Shortlisted', drive: 'Amazon' },
-];
+import { toast } from 'react-hot-toast';
 
 export default function ApplicantsPage() {
     const [loading, setLoading] = useState(true);
-    const [students, setStudents] = useState(INITIAL_STUDENTS);
+    const [students, setStudents] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filter, setFilter] = useState('All'); // All, Pending, Shortlisted, Rejected
+    const [updating, setUpdating] = useState(null); // ID of application being updated
 
     useEffect(() => {
-        const timer = setTimeout(() => setLoading(false), 1000);
-        return () => clearTimeout(timer);
+        fetchApplicants();
     }, []);
 
-    const handleAction = (id, newStatus) => {
-        setStudents(prev => prev.map(student =>
-            student.id === id ? { ...student, status: newStatus } : student
-        ));
+    const fetchApplicants = async () => {
+        try {
+            setLoading(true);
+            const response = await applicationsApi.getAll();
+            const data = response.data || [];
+            // Transform data if needed or use as is if DTO matches
+            setStudents(data);
+        } catch (error) {
+            console.error("Failed to fetch applicants:", error);
+            toast.error("Failed to load applicants");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAction = async (id, newStatus) => {
+        if (updating) return; // Prevent concurrent updates
+        
+        try {
+            setUpdating(id);
+            const response = await applicationsApi.updateStatus(id, newStatus.toUpperCase());
+            if (response.success) {
+                toast.success(`Application updated to ${newStatus}`);
+                // Update local state
+                setStudents(prev => prev.map(student =>
+                    student.id === id ? { ...student, status: newStatus.toUpperCase() } : student
+                ));
+            }
+        } catch (error) {
+            console.error("Failed to update status:", error);
+            toast.error(error.message || "Failed to update status");
+        } finally {
+            setUpdating(null);
+        }
     };
 
     const filteredStudents = students.filter(student => {
-        const matchesSearch = student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            student.drive.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesFilter = filter === 'All'
-            ? true
-            : filter === 'Pending'
-                ? student.status === 'Applied'
-                : student.status === filter;
+        // Safe access to fields
+        const name = student.studentName || '';
+        const drive = student.driveTitle || student.companyName || '';
+        const status = student.status || '';
+
+        const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            drive.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        let matchesFilter = true;
+        if (filter === 'All') {
+             matchesFilter = true;
+        } else if (filter === 'Pending') {
+            matchesFilter = ['PENDING', 'APPLIED', 'UNDER_REVIEW'].includes(status);
+        } else {
+            matchesFilter = status === filter.toUpperCase();
+        }
 
         return matchesSearch && matchesFilter;
     });
@@ -103,59 +134,71 @@ export default function ApplicantsPage() {
                             <tbody className="divide-y divide-gray-50">
                                 {filteredStudents.length > 0 ? (
                                     filteredStudents.map((student) => {
-                                        const isLocked = student.status === 'Shortlisted' || student.status === 'Rejected';
+                                        const isLocked = ['SHORTLISTED', 'REJECTED', 'SELECTED'].includes(student.status);
+                                        const isProcessing = updating === student.id;
+                                        
                                         return (
                                             <tr key={student.id} className="hover:bg-gray-50/80 transition-colors">
                                                 <td className="px-4 py-3">
                                                     <div className="flex items-center gap-3">
                                                         <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
-                                                            {student.name.split(' ').map(n => n[0]).join('')}
+                                                            {(student.studentName || 'U').split(' ').map(n => n[0]).join('')}
                                                         </div>
-                                                        <span className="font-medium text-gray-900">{student.name}</span>
+                                                        <span className="font-medium text-gray-900">{student.studentName}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-3 text-sm text-gray-600">{student.dept}</td>
-                                                <td className="px-4 py-3 text-sm text-gray-600 font-medium">{student.drive}</td>
+                                                <td className="px-4 py-3 text-sm text-gray-600">{student.studentDepartment || 'N/A'}</td>
+                                                <td className="px-4 py-3 text-sm text-gray-600 font-medium">{student.driveTitle || student.companyName}</td>
                                                 <td className="px-4 py-3">
                                                     <div className="text-sm">
-                                                        <span className="font-medium text-gray-900">{student.score}</span>
-                                                        <span className="text-gray-400 mx-1">/</span>
-                                                        <span className="text-gray-600">CGPA: {student.cgpa}</span>
+                                                        {student.studentScore && (
+                                                            <>
+                                                                <span className="font-medium text-gray-900">{student.studentScore}</span>
+                                                                <span className="text-gray-400 mx-1">/</span>
+                                                            </>
+                                                        )}
+                                                        <span className="text-gray-600">CGPA: {student.studentCgpa || 'N/A'}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <Badge variant={
-                                                        student.status === 'Shortlisted' ? 'success' :
-                                                            student.status === 'Rejected' ? 'error' :
+                                                        student.status === 'SHORTLISTED' || student.status === 'SELECTED' ? 'success' :
+                                                            student.status === 'REJECTED' ? 'error' :
                                                                 'info'
                                                     }>
-                                                        {student.status.toUpperCase()}
+                                                        {student.status}
                                                     </Badge>
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        <button
-                                                            onClick={() => handleAction(student.id, 'Shortlisted')}
-                                                            disabled={isLocked}
-                                                            title="Shortlist"
-                                                            className={`p-1.5 rounded transition-colors ${isLocked
-                                                                    ? 'opacity-30 cursor-not-allowed text-gray-400'
-                                                                    : 'text-green-600 hover:bg-green-50'
-                                                                }`}
-                                                        >
-                                                            <CheckCircle className="h-5 w-5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleAction(student.id, 'Rejected')}
-                                                            disabled={isLocked}
-                                                            title="Reject"
-                                                            className={`p-1.5 rounded transition-colors ${isLocked
-                                                                    ? 'opacity-30 cursor-not-allowed text-gray-400'
-                                                                    : 'text-red-600 hover:bg-red-50'
-                                                                }`}
-                                                        >
-                                                            <Ban className="h-5 w-5" />
-                                                        </button>
+                                                        {isProcessing ? (
+                                                            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                                                        ) : (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => handleAction(student.id, 'SHORTLISTED')}
+                                                                    disabled={isLocked}
+                                                                    title="Shortlist"
+                                                                    className={`p-1.5 rounded transition-colors ${isLocked
+                                                                            ? 'opacity-30 cursor-not-allowed text-gray-400'
+                                                                            : 'text-green-600 hover:bg-green-50'
+                                                                        }`}
+                                                                >
+                                                                    <CheckCircle className="h-5 w-5" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleAction(student.id, 'REJECTED')}
+                                                                    disabled={isLocked}
+                                                                    title="Reject"
+                                                                    className={`p-1.5 rounded transition-colors ${isLocked
+                                                                            ? 'opacity-30 cursor-not-allowed text-gray-400'
+                                                                            : 'text-red-600 hover:bg-red-50'
+                                                                        }`}
+                                                                >
+                                                                    <Ban className="h-5 w-5" />
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>

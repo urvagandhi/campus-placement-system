@@ -59,6 +59,10 @@ public class LoginResponseDTO {
      */
     private Long collegeId;
 
+    private String name;
+    private String email;
+    private String phoneNumber;
+
     /**
      * Role-based redirect URL for frontend navigation.
      */

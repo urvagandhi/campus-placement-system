@@ -54,6 +54,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final StudentRepository studentRepository;
     private final DriveEligibilityService eligibilityService;
     private final OrganizationScopeService scopeService;
+    private final com.campusplacement.eligibility.EligibilityRepository eligibilityRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -165,15 +166,15 @@ public class ApplicationServiceImpl implements ApplicationService {
         eligibilityService.validateApplication(student.getId(), drive.getId());
 
         Application application = Application.builder()
-            .student(student)
-            .studentId(student.getId())
-            .driveId(drive.getId())
-            .drive(drive)
-            .status(ApplicationStatusType.PENDING.name())
-            .appliedAt(LocalDateTime.now())
-            .resumeUrl(request.getResumeUrl() != null ? request.getResumeUrl() : student.getResumeUrl())
-            .coverLetter(request.getCoverLetter())
-            .build();
+                .student(student)
+                .studentId(student.getId())
+                .driveId(drive.getId())
+                .drive(drive)
+                .status(ApplicationStatusType.PENDING.name())
+                .appliedAt(LocalDateTime.now())
+                .resumeUrl(request.getResumeUrl() != null ? request.getResumeUrl() : student.getResumeUrl())
+                .coverLetter(request.getCoverLetter())
+                .build();
 
         application = applicationRepository.save(application);
 
@@ -288,10 +289,20 @@ public class ApplicationServiceImpl implements ApplicationService {
             }
         }
 
+        // Fetch student score from eligibility cache
+        Double studentScore = eligibilityRepository.findByStudentIdAndDriveId(
+                app.getStudent().getId(), app.getDriveId())
+                .map(com.campusplacement.eligibility.EligibilityResult::getScore)
+                .orElse(null);
+
         return ApplicationDTO.builder()
                 .id(app.getId())
                 .studentId(app.getStudent().getId())
                 .studentName(studentName)
+                .studentDepartment(
+                        app.getStudent().getDepartment() != null ? app.getStudent().getDepartment().getName() : "N/A")
+                .studentCgpa(app.getStudent().getCgpa())
+                .studentScore(studentScore)
                 .driveId(app.getDriveId())
                 .driveTitle(driveTitle)
                 .companyName(companyName)

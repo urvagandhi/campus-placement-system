@@ -20,6 +20,8 @@ import com.campusplacement.analytics.dto.PlacementStatsDTO;
 import com.campusplacement.applications.Application;
 import com.campusplacement.applications.ApplicationRepository;
 import com.campusplacement.common.OrganizationUnitType;
+import com.campusplacement.drives.DriveRepository;
+import com.campusplacement.drives.PlacementDrive;
 import com.campusplacement.organizations.OrganizationScopeService;
 import com.campusplacement.organizations.OrganizationUnit;
 import com.campusplacement.organizations.OrganizationUnitRepository;
@@ -51,6 +53,7 @@ public class AnalyticsService {
     private static final Logger log = LoggerFactory.getLogger(AnalyticsService.class);
 
     private final ApplicationRepository applicationRepository;
+    private final DriveRepository driveRepository;
     private final StudentRepository studentRepository;
     private final OrganizationUnitRepository organizationUnitRepository;
     private final OrganizationScopeService scopeService;
@@ -239,15 +242,17 @@ public class AnalyticsService {
     private PlacementStatsDTO calculateStatsForAllColleges() {
         List<Application> allApplications = applicationRepository.findAll();
         List<StudentProfile> allStudents = studentRepository.findAll();
+        List<PlacementDrive> allDrives = driveRepository.findAll();
 
-        return buildStatsDTO(allApplications, allStudents);
+        return buildStatsDTO(allApplications, allStudents, allDrives);
     }
 
     private PlacementStatsDTO calculateStatsForCollege(Long collegeId) {
         List<Application> applications = applicationRepository.findByCollegeId(collegeId);
         List<StudentProfile> students = studentRepository.findByCollegeId(collegeId);
+        List<PlacementDrive> drives = driveRepository.findByCollegeId(collegeId);
 
-        return buildStatsDTO(applications, students);
+        return buildStatsDTO(applications, students, drives);
     }
 
     private PlacementStatsDTO calculateStatsForDepartments(Set<Long> departmentIds, Long collegeId) {
@@ -259,8 +264,11 @@ public class AnalyticsService {
                 departmentIds, collegeId);
         List<StudentProfile> students = studentRepository.findByDepartmentIdInAndCollegeId(
                 departmentIds, collegeId);
+        // For departments, we might want to show drives eligible for these departments
+        List<PlacementDrive> drives = driveRepository.findDistinctByEligibleDepartments_IdInAndCollegeId(departmentIds,
+                collegeId);
 
-        return buildStatsDTO(applications, students);
+        return buildStatsDTO(applications, students, drives);
     }
 
     private DepartmentStatsDTO calculateDepartmentStats(OrganizationUnit department) {
@@ -286,7 +294,8 @@ public class AnalyticsService {
                 .build();
     }
 
-    private PlacementStatsDTO buildStatsDTO(List<Application> applications, List<StudentProfile> students) {
+    private PlacementStatsDTO buildStatsDTO(List<Application> applications, List<StudentProfile> students,
+            List<PlacementDrive> drives) {
         long totalStudents = students.size();
         long totalApplications = applications.size();
 
@@ -295,6 +304,9 @@ public class AnalyticsService {
 
         long placedStudents = statusCounts.getOrDefault("SELECTED", 0L);
         long shortlistedStudents = statusCounts.getOrDefault("SHORTLISTED", 0L);
+
+        long totalDrives = drives.size();
+        long activeDrives = drives.stream().filter(d -> "ACTIVE".equalsIgnoreCase(d.getStatus())).count();
 
         double placementRate = totalStudents > 0 ? (placedStudents * 100.0 / totalStudents) : 0.0;
 
@@ -308,6 +320,8 @@ public class AnalyticsService {
                 .highestPackage(calculateHighestPackage(applications))
                 .lowestPackage(calculateLowestPackage(applications))
                 .companiesVisited(countCompanies(applications))
+                .totalDrives(totalDrives)
+                .activeDrives(activeDrives)
                 .build();
     }
 
@@ -322,6 +336,8 @@ public class AnalyticsService {
                 .highestPackage(0.0)
                 .lowestPackage(0.0)
                 .companiesVisited(0L)
+                .totalDrives(0L)
+                .activeDrives(0L)
                 .build();
     }
 
@@ -370,6 +386,9 @@ public class AnalyticsService {
                 .highestPackage(calculateHighestPackage(applications))
                 .lowestPackage(calculateLowestPackage(applications))
                 .companiesVisited(countCompanies(applications))
+                .companiesVisited(countCompanies(applications))
+                .totalDrives(0L) // Batch stats currently don't filter drives by year, set to 0 for now
+                .activeDrives(0L)
                 .build();
     }
 

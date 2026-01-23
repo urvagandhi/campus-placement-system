@@ -104,4 +104,10 @@ public interface DriveRepository extends JpaRepository<PlacementDrive, Long> {
          */
         @Query("SELECT COUNT(DISTINCT d.college.id) FROM PlacementDrive d")
         long countDistinctColleges();
+
+        /**
+         * Find drives eligible for specific departments within a college.
+         */
+        List<PlacementDrive> findDistinctByEligibleDepartments_IdInAndCollegeId(
+                        java.util.Set<Long> departmentIds, Long collegeId);
 }

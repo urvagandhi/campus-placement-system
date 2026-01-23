@@ -1,14 +1,23 @@
 'use client';
 
 import Logo from '@/components/ui/Logo';
+import UserProfileDropdown from '@/components/ui/UserProfileDropdown';
 import { useAuth } from '@/hooks/useAuth';
-import { Bell, ChevronDown, LogOut, Search } from 'lucide-react';
+import { Bell, LogOut } from 'lucide-react';
 
 export default function SuperAdminNavbar() {
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
 
     const handleLogout = () => {
         logout();
+    };
+
+    const formatRole = (role) => {
+        if (!role) return 'Super User';
+        return role
+            .replace(/_/g, ' ')
+            .toLowerCase()
+            .replace(/\b\w/g, (c) => c.toUpperCase());
     };
 
     return (
@@ -25,18 +34,6 @@ export default function SuperAdminNavbar() {
                         </div>
                     </div>
 
-                    {/* Search Bar - Center */}
-                    <div className="hidden md:flex flex-1 max-w-lg mx-8">
-                        <div className="relative w-full">
-                            <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search system logs, colleges..."
-                                className="w-full pl-10 pr-4 py-2 bg-gray-50/50 border border-gray-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-100 text-sm text-gray-700 transition-all backdrop-blur-sm"
-                            />
-                        </div>
-                    </div>
-
                     {/* Right Side Actions */}
                     <div className="flex items-center gap-2 sm:gap-4">
                         <button className="relative p-2.5 text-gray-500 hover:text-indigo-600 transition-colors rounded-xl hover:bg-gray-100/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
@@ -48,22 +45,15 @@ export default function SuperAdminNavbar() {
 
                         <div className="flex items-center gap-3 pl-2 sm:pl-0">
                             <div className="hidden sm:block text-right">
-                                <p className="text-sm font-semibold text-gray-900 leading-none">System Admin</p>
-                                <p className="text-xs text-gray-500 mt-1">Super User</p>
+                                <p className="text-sm font-semibold text-gray-900 leading-none">{user?.name || 'System Admin'}</p>
+                                <p className="text-xs text-gray-500 mt-1">{formatRole(user?.role)}</p>
                             </div>
 
-                            <div className="relative group">
-                                <button className="flex items-center gap-2 focus:outline-none rounded-full p-0.5 ring-offset-2 focus:ring-2 focus:ring-indigo-500/20">
-                                    <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-100 to-white flex items-center justify-center text-indigo-700 font-bold border border-indigo-100 shadow-sm text-sm">
-                                        SA
-                                    </div>
-                                    <ChevronDown className="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors hidden sm:block" />
-                                </button>
-                            </div>
+                            <UserProfileDropdown />
 
                             <button
                                 onClick={handleLogout}
-                                className="p-2.5 text-gray-500 hover:text-red-600 transition-colors rounded-xl hover:bg-red-50/50 ml-1"
+                                className="p-2.5 text-gray-400 hover:text-red-600 transition-colors rounded-xl hover:bg-red-50/50 ml-1"
                                 title="Logout"
                             >
                                 <LogOut className="h-5 w-5" />

@@ -26,6 +26,7 @@ public class UserDTO {
     private Boolean isActive;
     private String phoneNumber;
     private String profileImageUrl;
+    private String status; // Active, Inactive
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime lastLogin;

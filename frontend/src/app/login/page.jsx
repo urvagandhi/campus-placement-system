@@ -51,6 +51,8 @@ export default function LoginPage() {
                 setError('Your account has been deactivated. Please contact an administrator.');
             } else if (err.message.includes('College')) {
                 setError('Your college is not active. Please contact an administrator.');
+            } else if (err.message.includes('Anti-automation') || err.message.includes('refresh')) {
+                setError('Browser check failed. Please refresh the page and try again.');
             } else {
                 setError(err.message || 'An error occurred. Please try again.');
             }

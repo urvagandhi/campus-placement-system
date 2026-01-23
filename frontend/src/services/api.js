@@ -96,6 +96,13 @@ const handleResponse = async (response, retryFn = null) => {
             // No retry function provided, just redirect
             clearAuthAndRedirect();
         }
+        
+        // Handle Maintenance Mode
+        if (response.status === 503) {
+            window.location.href = '/maintenance';
+            return;
+        }
+
         throw new Error(data.message || 'An error occurred');
     }
 
@@ -232,6 +239,10 @@ export const applicationsApi = {
         return fetchApi('/applications/my');
     },
 
+    getAll: async () => {
+        return fetchApi('/applications');
+    },
+
     getByDrive: async (driveId) => {
         return fetchApi(`/applications/drive/${driveId}`);
     },
@@ -246,6 +257,12 @@ export const applicationsApi = {
     withdraw: async (id) => {
         return fetchApi(`/applications/${id}/withdraw`, {
             method: 'DELETE',
+        });
+    },
+
+    updateStatus: async (id, status) => {
+        return fetchApi(`/applications/${id}/status?status=${status}`, {
+            method: 'PATCH',
         });
     },
 };
@@ -300,7 +317,108 @@ export const companiesApi = {
     },
 };
 
-export default {
+// ==================== Organizations API ====================
+
+export const organizationsApi = {
+    getDepartments: async () => {
+        return fetchApi('/organizations/departments');
+    },
+
+    getEvents: async () => {
+        return fetchApi('/organizations/events');
+    },
+
+    createEvent: async (data) => {
+        return fetchApi('/organizations/events', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+
+    checkConflicts: async (departmentIds, date) => {
+        const ids = departmentIds.join(',');
+        return fetchApi(`/organizations/conflicts?departmentIds=${ids}&date=${date}`);
+    },
+};
+
+// ==================== Users API ====================
+
+export const usersApi = {
+    getAll: async (search = '') => {
+        const query = search ? `?search=${encodeURIComponent(search)}` : '';
+        return fetchApi(`/users${query}`);
+    },
+
+    updateStatus: async (id, status) => {
+        return fetchApi(`/users/${id}/status?status=${status}`, {
+            method: 'PATCH',
+        });
+    },
+
+    updateRole: async (id, role) => {
+        return fetchApi(`/users/${id}/role?role=${role}`, {
+            method: 'PATCH',
+        });
+    },
+
+    getSystemStats: async () => {
+        return fetchApi('/superadmin/stats');
+    },
+
+    getAllColleges: async () => {
+        return fetchApi('/superadmin/colleges');
+    },
+
+    createCollege: async (data) => {
+        return fetchApi('/superadmin/colleges', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+
+    updateCollegeStatus: async (id, isActive) => {
+        return fetchApi(`/superadmin/colleges/${id}/status?active=${isActive}`, {
+            method: 'PATCH',
+        });
+    },
+
+    deleteCollege: async (id) => {
+        return fetchApi(`/superadmin/colleges/${id}`, {
+            method: 'DELETE',
+        });
+    },
+
+    getSettings: async () => {
+        return fetchApi('/settings');
+    },
+
+    updateSettings: async (data) => {
+        return fetchApi('/settings', {
+            method: 'POST', // Changed to POST to match controller
+            body: JSON.stringify(data),
+        });
+    },
+};
+
+// ==================== Profile API ====================
+
+export const profileApi = {
+    updateDetails: async (data) => {
+        return fetchApi('/profile/details', {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    },
+
+    changePassword: async (data) => {
+        return fetchApi('/profile/change-password', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+};
+
+const api = {
     auth: authApi,
     students: studentsApi,
     drives: drivesApi,
@@ -308,4 +426,9 @@ export default {
     eligibility: eligibilityApi,
     analytics: analyticsApi,
     companies: companiesApi,
+    organizations: organizationsApi,
+    users: usersApi,
+    profile: profileApi,
 };
+
+export default api;

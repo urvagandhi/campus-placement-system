@@ -4,19 +4,63 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowRight, CheckCircle, Clock, Hand, TrendingUp } from 'lucide-react';
+import { applicationsApi, drivesApi } from '@/services/api';
+import { ArrowRight, CheckCircle, Clock, Hand, TrendingUp, Briefcase } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { toast } from 'react-hot-toast';
 
 export default function StudentDashboard() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
+    const [applications, setApplications] = useState([]);
+    const [upcomingDrives, setUpcomingDrives] = useState([]);
+    const [stats, setStats] = useState({
+        applied: 0,
+        shortlisted: 0,
+        pending: 0
+    });
 
     useEffect(() => {
-        // Mock loading
-        const timer = setTimeout(() => setLoading(false), 1000);
-        return () => clearTimeout(timer);
-    }, []);
+        const fetchDashboardData = async () => {
+            try {
+                // Fetch applications and drives in parallel
+                const [appsResponse, drivesResponse] = await Promise.all([
+                    applicationsApi.getMyApplications().catch(err => {
+                        console.error("Failed to fetch applications:", err);
+                        return { data: [] };
+                    }),
+                    drivesApi.getUpcoming().catch(err => {
+                        console.error("Failed to fetch upcoming drives:", err);
+                        return { data: [] };
+                    })
+                ]);
+
+                const apps = appsResponse.data || [];
+                const drives = drivesResponse.data || [];
+
+                setApplications(apps);
+                setUpcomingDrives(drives);
+
+                // Calculate stats
+                const applied = apps.length;
+                const shortlisted = apps.filter(app => app.status === 'SHORTLISTED' || app.status === 'SELECTED').length;
+                const pending = apps.filter(app => app.status === 'PENDING').length;
+
+                setStats({ applied, shortlisted, pending });
+
+            } catch (error) {
+                console.error("Dashboard data fetch error:", error);
+                toast.error("Failed to load dashboard data");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (user) {
+            fetchDashboardData();
+        }
+    }, [user]);
 
     if (loading) {
         return (
@@ -32,10 +76,10 @@ export default function StudentDashboard() {
         );
     }
 
-    const stats = [
-        { label: 'Applied Drives', value: '12', icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-100/50' },
-        { label: 'Shortlisted', value: '5', icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-100/50' },
-        { label: 'Pending', value: '4', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-100/50' },
+    const statCards = [
+        { label: 'Applied Drives', value: stats.applied, icon: TrendingUp, color: 'text-blue-600', bg: 'bg-blue-100/50' },
+        { label: 'Shortlisted', value: stats.shortlisted, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-100/50' },
+        { label: 'Pending', value: stats.pending, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-100/50' },
     ];
 
     // Get user's display name from auth context
@@ -53,7 +97,11 @@ export default function StudentDashboard() {
                         <span className="text-sm font-semibold text-indigo-600 uppercase tracking-wider">Welcome back</span>
                     </div>
                     <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Hello, {displayName}</h1>
-                    <p className="text-gray-600 mt-2 max-w-lg text-lg">Your placement journey is looking great. You have 2 new interview calls scheduled.</p>
+                    <p className="text-gray-600 mt-2 max-w-lg text-lg">
+                        {stats.shortlisted > 0 
+                            ? `Great job! You have been shortlisted for ${stats.shortlisted} roles.`
+                            : "Explore the latest placement opportunities below."}
+                    </p>
                 </div>
                 <Link href="/dashboard/student/drives" className="relative z-10 w-full sm:w-auto">
                     <Button size="lg" className="w-full sm:w-auto shadow-lg shadow-indigo-500/20">
@@ -64,7 +112,7 @@ export default function StudentDashboard() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {stats.map((stat, index) => {
+                {statCards.map((stat, index) => {
                     const Icon = stat.icon;
                     return (
                         <Card key={index} hover={true} className="border-0 ring-1 ring-black/5 bg-white/60 backdrop-blur-xl">
@@ -88,7 +136,7 @@ export default function StudentDashboard() {
                 <Card
                     title="Recent Applications"
                     subtitle="Track your latest job applications"
-                    className="bg-white/60 backdrop-blur-xl border-0 ring-1 ring-black/5"
+                    className="bg-white/60 backdrop-blur-xl border-0 ring-1 ring-black/5 h-full"
                     footer={
                         <Link href="/dashboard/student/applications" className="text-indigo-600 text-sm font-semibold hover:text-indigo-800 flex items-center transition-colors">
                             View all applications <ArrowRight className="ml-1.5 h-4 w-4" />
@@ -96,40 +144,45 @@ export default function StudentDashboard() {
                     }
                 >
                     <div className="space-y-4">
-                        {[
-                            { company: 'Google', role: 'SDE-1', date: '2 days ago', status: 'shortlisted', icon: 'G' },
-                            { company: 'Microsoft', role: 'Support Engineer', date: '4 days ago', status: 'pending', icon: 'M' },
-                            { company: 'Amazon', role: 'SDE Intern', date: '1 week ago', status: 'rejected', icon: 'A' },
-                        ].map((app, i) => (
-                            <div key={i} className="flex items-center justify-between p-3.5 hover:bg-white/50 rounded-2xl transition-all border border-transparent hover:border-gray-100 group">
-                                <div className="flex items-center gap-4">
-                                    <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-gray-100 to-white flex items-center justify-center font-bold text-gray-600 text-lg shadow-sm border border-gray-100">
-                                        {app.icon}
+                        {applications.length > 0 ? (
+                            applications.slice(0, 3).map((app, i) => (
+                                <div key={i} className="flex items-center justify-between p-3.5 hover:bg-white/50 rounded-2xl transition-all border border-transparent hover:border-gray-100 group">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-gray-100 to-white flex items-center justify-center font-bold text-gray-600 text-lg shadow-sm border border-gray-100">
+                                            {app.drive?.company?.name?.charAt(0) || 'C'}
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-gray-900">{app.drive?.company?.name || 'Company'}</p>
+                                            <p className="text-sm text-gray-500">{app.drive?.jobTitle || 'Role'}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="font-semibold text-gray-900">{app.company}</p>
-                                        <p className="text-sm text-gray-500">{app.role}</p>
+                                    <div className="text-right">
+                                        <Badge variant={
+                                            app.status === 'SELECTED' ? 'success' :
+                                            app.status === 'SHORTLISTED' ? 'success' :
+                                            app.status === 'REJECTED' ? 'error' : 'warning'
+                                        } size="md">
+                                            {app.status}
+                                        </Badge>
+                                        <p className="text-xs text-gray-400 mt-1.5 font-medium">
+                                            {new Date(app.appliedAt).toLocaleDateString()}
+                                        </p>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <Badge variant={
-                                        app.status === 'shortlisted' ? 'success' :
-                                            app.status === 'pending' ? 'warning' : 'error'
-                                    } size="md">
-                                        {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
-                                    </Badge>
-                                    <p className="text-xs text-gray-400 mt-1.5 font-medium">{app.date}</p>
-                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-8 text-gray-500">
+                                <p>No applications yet.</p>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </Card>
 
                 {/* Recommended Drives */}
                 <Card
-                    title="Recommended for You"
-                    subtitle="Opportunities matching your profile"
-                    className="bg-white/60 backdrop-blur-xl border-0 ring-1 ring-black/5"
+                    title="Upcoming Drives"
+                    subtitle="Opportunities you can apply for"
+                    className="bg-white/60 backdrop-blur-xl border-0 ring-1 ring-black/5 h-full"
                     footer={
                         <Link href="/dashboard/student/drives" className="text-indigo-600 text-sm font-semibold hover:text-indigo-800 flex items-center transition-colors">
                             View all drives <ArrowRight className="ml-1.5 h-4 w-4" />
@@ -137,30 +190,35 @@ export default function StudentDashboard() {
                     }
                 >
                     <div className="space-y-4">
-                        {[
-                            { company: 'Adobe', role: 'Product Intern', eligibility: 'Eligible', deadline: 'Tomorrow', icon: 'A' },
-                            { company: 'Salesforce', role: 'MTS', eligibility: 'Eligible', deadline: 'in 2 days', icon: 'S' },
-                        ].map((drive, i) => (
-                            <div key={i} className="flex items-center justify-between p-3.5 hover:bg-white/50 rounded-2xl transition-all border border-transparent hover:border-gray-100">
-                                <div className="flex items-center gap-4">
-                                    <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center font-bold text-indigo-600 text-lg shadow-sm border border-indigo-50">
-                                        {drive.icon}
+                        {upcomingDrives.length > 0 ? (
+                            upcomingDrives.slice(0, 3).map((drive, i) => (
+                                <div key={i} className="flex items-center justify-between p-3.5 hover:bg-white/50 rounded-2xl transition-all border border-transparent hover:border-gray-100">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center font-bold text-indigo-600 text-lg shadow-sm border border-indigo-50">
+                                            {drive.company?.name?.charAt(0) || <Briefcase className="h-5 w-5" />}
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-gray-900">{drive.company?.name || 'Company'}</p>
+                                            <p className="text-sm text-gray-500">{drive.jobTitle}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="font-semibold text-gray-900">{drive.company}</p>
-                                        <p className="text-sm text-gray-500">{drive.role}</p>
+                                    <div className="text-right flex flex-col items-end gap-1">
+                                        {/* Simple eligibility check - could be improved with real check */}
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                            Active
+                                        </span>
+                                        <p className="text-xs text-red-500 font-medium flex items-center gap-1">
+                                            <Clock className="h-3 w-3" /> 
+                                            {new Date(drive.deadline).toLocaleDateString()}
+                                        </p>
                                     </div>
                                 </div>
-                                <div className="text-right flex flex-col items-end gap-1">
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                        {drive.eligibility}
-                                    </span>
-                                    <p className="text-xs text-red-500 font-medium flex items-center gap-1">
-                                        <Clock className="h-3 w-3" /> Ends {drive.deadline}
-                                    </p>
-                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-8 text-gray-500">
+                                <p>No upcoming drives found.</p>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </Card>
             </div>

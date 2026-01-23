@@ -13,6 +13,7 @@ import {
     Users
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Skeleton, StatsSkeleton, ListSkeleton } from '@/components/ui/Skeleton';
 
 /**
  * Security Operations Center Dashboard
@@ -58,8 +59,34 @@ export default function SecurityDashboard() {
 
     if (isLoading && !stats) {
         return (
-            <div className="flex justify-center items-center h-96">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <div className="space-y-8 animate-pulse">
+                <div className="flex justify-between items-center mb-10">
+                    <div className="space-y-3">
+                        <Skeleton className="h-10 w-64" />
+                        <Skeleton className="h-4 w-96" />
+                    </div>
+                    <Skeleton className="h-10 w-40 rounded-xl" />
+                </div>
+                <StatsSkeleton />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2 space-y-4">
+                        <Skeleton className="h-8 w-48 mb-4" />
+                        <div className="border border-gray-100 rounded-2xl p-6 bg-white">
+                            <ListSkeleton count={6} />
+                        </div>
+                    </div>
+                    <div className="space-y-4">
+                        <Skeleton className="h-8 w-32 mb-4" />
+                        <div className="border border-gray-100 rounded-2xl p-6 bg-white space-y-6">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="space-y-2">
+                                    <Skeleton className="h-3 w-24" />
+                                    <Skeleton className="h-2 w-full" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -102,7 +129,7 @@ export default function SecurityDashboard() {
     );
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-8 animate-fade-in">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">

@@ -74,6 +74,36 @@ public class OrganizationScopeService {
     private final ScopeContextHolder scopeContextHolder;
     private final MeterRegistry meterRegistry;
 
+    /**
+     * Helper to get the current authenticated user's ID from SecurityContext.
+     * This relies on the security authentication (UserDetails or Principal).
+     */
+    private Long getCurrentUserId() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            throw new com.campusplacement.common.exception.ResourceNotFoundException("User not authenticated");
+        }
+
+        // Assuming Principal is the User entity or UserDetails impl with getId()
+        // Adjust this if your UserDetails implementation is different
+        // In this project, we usually load com.campusplacement.auth.CustomUserDetails
+        if (auth.getPrincipal() instanceof com.campusplacement.security.CustomUserDetails) {
+            return ((com.campusplacement.security.CustomUserDetails) auth.getPrincipal()).getId();
+        }
+
+        throw new IllegalStateException("Unknown principal type: " + auth.getPrincipal().getClass());
+    }
+
+    /**
+     * Convenience method to get scope for the currently logged-in user.
+     */
+    @Transactional(readOnly = true)
+    public ScopeContext getCurrentUserScope() {
+        return resolveScope(getCurrentUserId());
+    }
+
     // ==================== Public API ====================
 
     /**

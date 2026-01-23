@@ -4,73 +4,50 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
+import { drivesApi } from '@/services/api';
 import { AlertTriangle, Edit2, Filter, Plus, Search, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-
-// Mock Data
-const MOCK_DRIVES = [
-    {
-        id: 1,
-        company: 'Google',
-        role: 'Software Engineer',
-        date: '2023-11-20',
-        applicants: 45,
-        status: 'Active',
-        location: 'Bangalore',
-        status: 'Active',
-        location: 'Bangalore',
-        pkg: '14-20 LPA',
-        hasConflict: true // Mock conflict
-    },
-    {
-        id: 2,
-        company: 'Microsoft',
-        role: 'Support Engineer',
-        date: '2023-11-25',
-        applicants: 32,
-        status: 'Active',
-        location: 'Hyderabad',
-        pkg: '12-16 LPA'
-    },
-    {
-        id: 3,
-        company: 'Amazon',
-        role: 'SDE Intern',
-        date: '2023-11-18',
-        applicants: 28,
-        status: 'Completed',
-        location: 'Pune',
-        pkg: '80k/mo'
-    },
-    {
-        id: 4,
-        company: 'Adobe',
-        role: 'Product Manager',
-        date: '2023-12-05',
-        applicants: 12,
-        status: 'Upcoming',
-        location: 'Noida',
-        pkg: '18 LPA'
-    },
-];
+import { toast } from 'react-hot-toast';
 
 export default function ManageDrivesPage() {
     const [loading, setLoading] = useState(true);
+    const [drives, setDrives] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filter, setFilter] = useState('All'); // All, Active, Completed, Upcoming
 
     useEffect(() => {
-        const timer = setTimeout(() => setLoading(false), 800);
-        return () => clearTimeout(timer);
+        fetchDrives();
     }, []);
 
-    const filteredDrives = MOCK_DRIVES.filter(drive => {
-        const matchesSearch = drive.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            drive.role.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesFilter = filter === 'All' || drive.status === filter;
+    const fetchDrives = async () => {
+        try {
+            setLoading(true);
+            const response = await drivesApi.getAll();
+            const data = response.data?.content || (Array.isArray(response.data) ? response.data : []) || [];
+            setDrives(data);
+        } catch (error) {
+            console.error("Failed to fetch drives:", error);
+            toast.error("Failed to load drives");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        return matchesSearch && matchesFilter;
+    const filteredDrives = drives.filter(drive => {
+        const companyName = drive.companyName || '';
+        const role = drive.title || '';
+        const matchesSearch = companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            role.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        let statusMatch = true;
+        if (filter !== 'All') {
+            // Map frontend filter logic to backend status if needed
+            // Assuming backend statuses: UPCOMING, ACTIVE, COMPLETED
+            statusMatch = drive.status === filter.toUpperCase();
+        }
+
+        return matchesSearch && statusMatch;
     });
 
     return (
@@ -130,8 +107,8 @@ export default function ManageDrivesPage() {
                                 <tr className="border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wider bg-gray-50/50">
                                     <th className="px-4 py-3 font-semibold">Company & Role</th>
                                     <th className="px-4 py-3 font-semibold">Date</th>
-                                    <th className="px-4 py-3 font-semibold">Package/Stipend</th>
-                                    <th className="px-4 py-3 font-semibold">Applicants</th>
+                                    <th className="px-4 py-3 font-semibold">Package</th>
+                                    <th className="px-4 py-3 font-semibold">Location</th>
                                     <th className="px-4 py-3 font-semibold">Status</th>
                                     <th className="px-4 py-3 font-semibold text-right">Actions</th>
                                 </tr>
@@ -141,30 +118,27 @@ export default function ManageDrivesPage() {
                                     filteredDrives.map((drive) => (
                                         <tr key={drive.id} className="hover:bg-gray-50/80 transition-colors group">
                                             <td className="px-4 py-3">
-                                                <div className="font-medium text-gray-900">{drive.company}</div>
-                                                <div className="text-sm text-gray-500">{drive.role}</div>
+                                                <div className="font-medium text-gray-900">{drive.companyName}</div>
+                                                <div className="text-sm text-gray-500">{drive.title}</div>
                                             </td>
                                             <td className="px-4 py-3 text-sm text-gray-600">
                                                 <div className="flex items-center gap-2">
-                                                    {drive.date}
-                                                    {drive.hasConflict && (
-                                                        <div className="text-amber-500" title="Academic Schedule Conflict Detected">
-                                                            <AlertTriangle className="h-4 w-4" />
-                                                        </div>
-                                                    )}
+                                                    {new Date(drive.driveDate).toLocaleDateString()}
+                                                    {/* Warning logic removed as 'hasConflict' is not in DTO yet */}
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-3 text-sm text-gray-600">{drive.pkg}</td>
+                                            <td className="px-4 py-3 text-sm text-gray-600">
+                                                {drive.packageLpa ? `${drive.packageLpa} LPA` : 'N/A'}
+                                            </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-medium text-gray-900">{drive.applicants}</span>
-                                                    <span className="text-xs text-gray-400">students</span>
+                                                    <span className="text-sm text-gray-900">{drive.location || 'Remote'}</span>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <Badge variant={
-                                                    drive.status === 'Active' ? 'success' :
-                                                        drive.status === 'Completed' ? 'neutral' :
+                                                    drive.status === 'ACTIVE' ? 'success' :
+                                                        drive.status === 'COMPLETED' ? 'neutral' :
                                                             'warning'
                                                 }>
                                                     {drive.status}
@@ -172,11 +146,9 @@ export default function ManageDrivesPage() {
                                             </td>
                                             <td className="px-4 py-3 text-right">
                                                 <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Link href="/dashboard/coordinator/applicants">
-                                                        <Button variant="secondary" size="sm" className="h-8 px-2" title="View Applicants">
-                                                            <Users className="h-4 w-4" />
-                                                        </Button>
-                                                    </Link>
+                                                    <Button variant="secondary" size="sm" className="h-8 px-2" title="View Applicants">
+                                                        <Users className="h-4 w-4" />
+                                                    </Button>
                                                     <Button variant="ghost" size="sm" className="h-8 px-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50" title="Edit Drive">
                                                         <Edit2 className="h-4 w-4" />
                                                     </Button>

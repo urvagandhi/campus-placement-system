@@ -31,14 +31,14 @@ spring:
     show-sql: true
     properties:
       hibernate:
-        format_sql: true
+        "[format_sql]": true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
   # SQL Script Initialization
   sql:
     init:
       mode: always
-      separator: ;;
+      separator: ";"
       schema-locations: classpath:schema.sql
       data-locations: classpath:seed-data-v2.sql
       continue-on-error: false
@@ -75,15 +75,18 @@ management:
       exposure:
         include: health,prometheus,metrics,info
   endpoint:
+    health:
+      show-details: always
     prometheus:
-      enabled: true
+      access: unrestricted
     metrics:
-      enabled: true
+      access: unrestricted
   metrics:
     tags:
       application: campus-placement-system
-    export:
-      prometheus:
+  prometheus:
+    metrics:
+      export:
         enabled: true
 
 resilience4j:
@@ -140,5 +143,5 @@ springdoc:
 # Logging Configuration
 logging:
   level:
-    com.campusplacement: DEBUG
-    org.springframework.security: DEBUG
+    "[com.campusplacement]": DEBUG
+    "[org.springframework.security]": DEBUG

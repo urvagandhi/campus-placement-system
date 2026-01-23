@@ -52,4 +52,51 @@ public class CollegeService {
                 .isActive(college.getIsActive())
                 .build();
     }
+
+    /**
+     * Get all colleges (for Super Admin).
+     */
+    public java.util.List<CollegeDTO> getAllColleges() {
+        return collegeRepository.findAll().stream()
+                .map(this::mapToDTO)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Update the active status of a college.
+     *
+     * @param id     College ID
+     * @param active New active status
+     * @return Updated CollegeDTO
+     */
+    @SuppressWarnings("null")
+    @Transactional
+    public CollegeDTO updateCollegeStatus(Long id, boolean active) {
+        College college = collegeRepository.findById(id)
+                .orElseThrow(() -> new com.campusplacement.common.exception.ResourceNotFoundException(
+                        "College not found with id: " + id));
+
+        college.setIsActive(active);
+        College savedCollege = collegeRepository.save(college);
+        log.info("College status updated: {} ({}) -> isActive: {}", savedCollege.getName(), savedCollege.getCode(),
+                active);
+
+        return mapToDTO(savedCollege);
+    }
+
+    /**
+     * Delete a college.
+     *
+     * @param id College ID
+     */
+    @SuppressWarnings("null")
+    @Transactional
+    public void deleteCollege(Long id) {
+        College college = collegeRepository.findById(id)
+                .orElseThrow(() -> new com.campusplacement.common.exception.ResourceNotFoundException(
+                        "College not found with id: " + id));
+
+        collegeRepository.delete(college);
+        log.info("College deleted: {} ({})", college.getName(), college.getCode());
+    }
 }

@@ -46,6 +46,18 @@ public class UserManagementService {
     private final CollegeRepository collegeRepository;
     private final OrganizationUnitRepository organizationUnitRepository;
     private final PasswordEncoder passwordEncoder;
+    private final com.campusplacement.settings.SystemSettingsService systemSettingsService;
+
+    /**
+     * Checks if user registration is currently enabled.
+     * Only applies to COORDINATOR and STUDENT creation.
+     * SUPER_ADMIN operations are always allowed.
+     */
+    private void checkRegistrationEnabled() {
+        if (!systemSettingsService.isRegistrationEnabled()) {
+            throw new IllegalStateException("User registration is currently disabled by system administrator");
+        }
+    }
 
     /**
      * Creates a new student user.
@@ -53,6 +65,9 @@ public class UserManagementService {
      */
     @Transactional
     public UserDTO createStudent(CreateStudentDTO dto) {
+        // Check if registration is enabled
+        checkRegistrationEnabled();
+
         CustomUserDetails currentUser = getCurrentUser();
         enforceRole(currentUser, UserRole.COORDINATOR);
 
@@ -177,6 +192,9 @@ public class UserManagementService {
      */
     @Transactional
     public UserDTO createCoordinator(CreateCoordinatorDTO dto) {
+        // Check if registration is enabled
+        checkRegistrationEnabled();
+
         CustomUserDetails currentUser = getCurrentUser();
         enforceRole(currentUser, UserRole.ADMIN);
 
@@ -305,6 +323,46 @@ public class UserManagementService {
             throw new AccessDeniedException("Not authenticated");
         }
         return (CustomUserDetails) auth.getPrincipal();
+    }
+
+    /**
+     * Updates the current user's profile.
+     */
+    @Transactional
+    public UserDTO updateProfile(com.campusplacement.users.dto.ProfileUpdateDTO dto) {
+        CustomUserDetails currentUserDetails = getCurrentUser();
+        User user = userRepository.findById(currentUserDetails.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        user.setName(dto.getName());
+        user.setPhoneNumber(dto.getPhoneNumber());
+
+        User savedUser = userRepository.save(user);
+        log.info("User {} updated their profile", user.getEmail());
+
+        return mapToDTO(savedUser);
+    }
+
+    /**
+     * Changes the current user's password.
+     */
+    @Transactional
+    public void changePassword(com.campusplacement.users.dto.ChangePasswordDTO dto) {
+        CustomUserDetails currentUserDetails = getCurrentUser();
+        User user = userRepository.findById(currentUserDetails.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Incorrect current password");
+        }
+
+        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+            throw new IllegalArgumentException("New passwords do not match");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
+        userRepository.save(user);
+        log.info("User {} changed their password", user.getEmail());
     }
 
     private UserDTO mapToDTO(User user) {

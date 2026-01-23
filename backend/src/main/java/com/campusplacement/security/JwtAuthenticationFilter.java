@@ -41,6 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
     private final CookieUtils cookieUtils;
+    private final com.campusplacement.settings.SystemSettingsService systemSettingsService;
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
@@ -69,6 +70,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception ex) {
             log.error("Could not set user authentication in security context", ex);
+        }
+
+        // MAITENANCE MODE CHECK
+        // Must be done AFTER authentication attempt so we know the user's role
+        // EXCEPTION: Allow login endpoint to pass through
+        // EXCEPTION: Allow health/actuator endpoints
+        // EXCEPTION: Allow OPTIONS requests (CORS Preflight)
+        String path = request.getRequestURI();
+        boolean isPublicEndpoint = path.contains("/auth/login") ||
+                path.contains("/actuator") ||
+                path.contains("/health") ||
+                path.contains("/swagger") ||
+                path.contains("/api-docs") ||
+                "OPTIONS".equalsIgnoreCase(request.getMethod());
+
+        if (!isPublicEndpoint && systemSettingsService.isMaintenanceMode()) {
+            var auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isSuperAdmin = auth != null && auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+
+            if (!isSuperAdmin) {
+                SecurityContextHolder.clearContext();
+                response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+                response.setContentType("application/json");
+                response.getWriter().write(
+                        "{\"success\":false,\"message\":\"System is under maintenance\",\"error\":\"SERVICE_UNAVAILABLE\"}");
+                return; // Stop chain
+            }
         }
 
         filterChain.doFilter(request, response);

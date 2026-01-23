@@ -2,32 +2,73 @@
 
 import Badge from '@/components/ui/Badge';
 import Card from '@/components/ui/Card';
+import { analyticsApi, drivesApi } from '@/services/api';
 import { Activity, ArrowRight, Briefcase, Calendar, Plus, UserCheck, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-
-// Mock Data
-const MOCK_STATS = [
-    { label: 'Total Drives', value: '12', icon: Briefcase, color: 'bg-blue-100/50 text-blue-600' },
-    { label: 'Active Drives', value: '4', icon: Activity, color: 'bg-emerald-100/50 text-emerald-600' },
-    { label: 'Total Applicants', value: '148', icon: Users, color: 'bg-purple-100/50 text-purple-600' },
-    { label: 'Shortlisted', value: '45', icon: UserCheck, color: 'bg-indigo-100/50 text-indigo-600' },
-];
-
-const RECENT_DRIVES = [
-    { id: 1, company: 'Google', role: 'Software Engineer', date: '2023-11-20', applicants: 45, status: 'Active' },
-    { id: 2, company: 'Microsoft', role: 'Support Engineer', date: '2023-11-25', applicants: 32, status: 'Active' },
-    { id: 3, company: 'Amazon', role: 'SDE Intern', date: '2023-11-18', applicants: 28, status: 'Completed' },
-];
+import { toast } from 'react-hot-toast';
 
 export default function CoordinatorDashboard() {
     const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        totalDrives: 0,
+        activeDrives: 0,
+        totalApplicants: 0,
+        shortlisted: 0
+    });
+    const [recentDrives, setRecentDrives] = useState([]);
 
     useEffect(() => {
-        // Simulate loading
-        const timer = setTimeout(() => setLoading(false), 1000);
-        return () => clearTimeout(timer);
+        const fetchDashboardData = async () => {
+            try {
+                const [analyticsResponse, drivesResponse] = await Promise.all([
+                    analyticsApi.getOverview().catch(err => {
+                        console.error("Failed to fetch analytics:", err);
+                        // Return default structure if failed
+                        return { data: { totalDrives: 0, activeDrives: 0, totalApplications: 0, shortlistedCount: 0 } };
+                    }),
+                    drivesApi.getAll().catch(err => {
+                        console.error("Failed to fetch drives:", err);
+                        return { data: { content: [] } };
+                    })
+                ]);
+
+                // Update stats from analytics response
+                // Assuming analytics API returns { totalDrives, activeDrives, totalApplications, shortlistedCount }
+                // Adjust property names based on actual API response
+                const analytics = analyticsResponse.data || {};
+                
+                // If analytics endpoint is not fully ready, we can compute from drives too, but prefer analytics API
+                setStats({
+                    totalDrives: analytics.totalDrives || 0,
+                    activeDrives: analytics.activeDrives || 0,
+                    totalApplicants: analytics.totalApplications || 0,
+                    shortlisted: analytics.shortlistedCount || 0
+                });
+
+                // Recent drives
+                // drivesResponse.data could be a Page object or List, check your API
+                // Assuming Page object: { content: [...] }
+                const drivesList = drivesResponse.data?.content || (Array.isArray(drivesResponse.data) ? drivesResponse.data : []) || [];
+                setRecentDrives(drivesList);
+
+            } catch (error) {
+                console.error("Dashboard data fetch error:", error);
+                toast.error("Failed to load dashboard data");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDashboardData();
     }, []);
+
+    const statItems = [
+        { label: 'Total Drives', value: stats.totalDrives, icon: Briefcase, color: 'bg-blue-100/50 text-blue-600' },
+        { label: 'Active Drives', value: stats.activeDrives, icon: Activity, color: 'bg-emerald-100/50 text-emerald-600' },
+        { label: 'Total Applicants', value: stats.totalApplicants, icon: Users, color: 'bg-purple-100/50 text-purple-600' },
+        { label: 'Shortlisted', value: stats.shortlisted, icon: UserCheck, color: 'bg-indigo-100/50 text-indigo-600' },
+    ];
 
     return (
         <div className="space-y-8 animate-fade-in">
@@ -39,7 +80,7 @@ export default function CoordinatorDashboard() {
                 </div>
                 <div className="flex items-center text-sm font-medium text-gray-500 bg-white/60 backdrop-blur-md px-4 py-2 rounded-xl shadow-sm border border-white/50">
                     <Calendar className="mr-2 h-4 w-4 text-indigo-500" />
-                    October 25, 2023
+                    {new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </div>
             </div>
 
@@ -57,7 +98,7 @@ export default function CoordinatorDashboard() {
                         </div>
                     ))
                 ) : (
-                    MOCK_STATS.map((stat) => {
+                    statItems.map((stat) => {
                         const Icon = stat.icon;
                         return (
                             <Card key={stat.label} variant="default" hover={true} className="border-0 ring-1 ring-black/5 bg-white/60 backdrop-blur-xl">
@@ -88,19 +129,23 @@ export default function CoordinatorDashboard() {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                {RECENT_DRIVES.length > 0 ? (
-                                    RECENT_DRIVES.map((drive) => (
+                                {recentDrives.length > 0 ? (
+                                    recentDrives.slice(0, 5).map((drive) => (
                                         <div key={drive.id} className="flex items-center justify-between p-4 bg-white/40 hover:bg-white/60 rounded-2xl border border-transparent hover:border-gray-100 transition-all group">
                                             <div>
-                                                <h4 className="font-semibold text-gray-900">{drive.company}</h4>
-                                                <p className="text-sm text-gray-500">{drive.role}</p>
+                                                <h4 className="font-semibold text-gray-900">{drive.company?.name || 'Company'}</h4>
+                                                <p className="text-sm text-gray-500">{drive.jobTitle}</p>
                                             </div>
                                             <div className="flex items-center gap-4">
                                                 <div className="text-right hidden sm:block">
-                                                    <p className="text-sm font-medium text-gray-900">{drive.applicants} Applicants</p>
-                                                    <p className="text-xs text-gray-400">{drive.date}</p>
+                                                    <p className="text-sm font-medium text-gray-900">
+                                                        {drive.eligibleDepartments ? drive.eligibleDepartments.length : 0} Depts
+                                                    </p>
+                                                    <p className="text-xs text-gray-400">
+                                                        {new Date(drive.createdAt).toLocaleDateString()}
+                                                    </p>
                                                 </div>
-                                                <Badge variant={drive.status === 'Active' ? 'success' : 'neutral'}>
+                                                <Badge variant={drive.status === 'ACTIVE' ? 'success' : 'neutral'}>
                                                     {drive.status}
                                                 </Badge>
                                             </div>
@@ -154,7 +199,7 @@ export default function CoordinatorDashboard() {
                                         </div>
                                         Review Applicants
                                     </h4>
-                                    <p className="text-xs text-gray-500 mt-2 pl-11">12 Pending reviews from yesterday.</p>
+                                    <p className="text-xs text-gray-500 mt-2 pl-11">Check pending applications.</p>
                                 </Link>
 
                                 <Link href="/dashboard/coordinator/analytics" className="block p-4 bg-white/60 border border-white/60 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] transition-all group">

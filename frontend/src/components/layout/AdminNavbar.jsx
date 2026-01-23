@@ -1,14 +1,23 @@
 'use client';
 
 import Logo from '@/components/ui/Logo';
+import UserProfileDropdown from '@/components/ui/UserProfileDropdown';
 import { useAuth } from '@/hooks/useAuth';
-import { Bell, ChevronDown, LogOut, Search } from 'lucide-react';
+import { Bell, LogOut, Search } from 'lucide-react';
 
 export default function AdminNavbar() {
-    const { logout, user } = useAuth();
+    const { user, logout } = useAuth();
 
     const handleLogout = async () => {
         await logout();
+    };
+
+    const formatRole = (role) => {
+        if (!role) return 'Administrator';
+        return role
+            .replace(/_/g, ' ')
+            .toLowerCase()
+            .replace(/\b\w/g, (c) => c.toUpperCase());
     };
 
     return (
@@ -48,18 +57,11 @@ export default function AdminNavbar() {
 
                         <div className="flex items-center gap-3 pl-2 sm:pl-0">
                             <div className="hidden sm:block text-right">
-                                <p className="text-sm font-semibold text-gray-900 leading-none">collegeAdmin</p>
-                                <p className="text-xs text-gray-500 mt-1">Administrator</p>
+                                <p className="text-sm font-semibold text-gray-900 leading-none">{user?.name || 'College Admin'}</p>
+                                <p className="text-xs text-gray-500 mt-1">{formatRole(user?.role)}</p>
                             </div>
 
-                            <div className="relative group">
-                                <button className="flex items-center gap-2 focus:outline-none rounded-full p-0.5 ring-offset-2 focus:ring-2 focus:ring-indigo-500/20">
-                                    <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-100 to-white flex items-center justify-center text-indigo-700 font-bold border border-indigo-100 shadow-sm text-sm">
-                                        AD
-                                    </div>
-                                    <ChevronDown className="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors hidden sm:block" />
-                                </button>
-                            </div>
+                            <UserProfileDropdown />
 
                             <button
                                 onClick={handleLogout}

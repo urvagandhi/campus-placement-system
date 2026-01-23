@@ -21,6 +21,9 @@ public class PlacementStatsDTO {
 
     private Long totalApplications;
 
+    private Long totalDrives;
+    private Long activeDrives;
+
     private Long companiesVisited;
 
     private Double averagePackage;

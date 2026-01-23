@@ -3,8 +3,6 @@ package com.campusplacement.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -16,7 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import com.campusplacement.security.CustomUserDetailsService;
 import com.campusplacement.security.JwtAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
@@ -54,94 +51,100 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final CustomUserDetailsService userDetailsService;
-    private final com.campusplacement.security.CustomAccessDeniedHandler customAccessDeniedHandler;
-    private final com.campusplacement.security.CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+        private final JwtAuthenticationFilter jwtAuthenticationFilter;
+        private final com.campusplacement.security.CustomAccessDeniedHandler customAccessDeniedHandler;
+        private final com.campusplacement.security.CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                // Disable CSRF for REST API
-                .csrf(csrf -> csrf.disable())
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                // Disable CSRF for REST API
+                                .csrf(csrf -> csrf.disable())
 
-                // Enable CORS
-                .cors(Customizer.withDefaults())
+                                // Explicitly disable HTTP Basic and Form Login to prevent browser popups
+                                .httpBasic(basic -> basic.disable())
+                                .formLogin(form -> form.disable())
 
-                // Stateless session management
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                // Enable CORS
+                                .cors(Customizer.withDefaults())
 
-                // Authorization rules
-                .authorizeHttpRequests(auth -> auth
-                        // Public endpoints - login, refresh, and logout are public to handle session
-                        // cleanup
-                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/logout")
-                        .permitAll()
-                        .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/health", "/actuator/**").permitAll()
+                                // Stateless session management
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                        // Role-based protection
-                        .requestMatchers("/api/v1/superadmin/**").hasRole("SUPER_ADMIN")
-                        .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/v1/coordinator/**").hasAnyRole("COORDINATOR", "ADMIN", "SUPER_ADMIN")
-                        .requestMatchers("/api/v1/student/**")
-                        .hasAnyRole("STUDENT", "COORDINATOR", "ADMIN", "SUPER_ADMIN")
+                                // Authorization rules
+                                .authorizeHttpRequests(auth -> auth
+                                                // Allow CORS preflight requests
+                                                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**")
+                                                .permitAll()
 
-                        // All other requests require authentication
-                        .anyRequest().authenticated())
+                                                // Public endpoints - login, refresh, and logout are public to handle
+                                                // session
+                                                // cleanup
+                                                .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh",
+                                                                "/api/v1/auth/logout")
+                                                .permitAll()
+                                                .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
+                                                .permitAll()
+                                                .requestMatchers("/health", "/actuator/**").permitAll()
 
-                // Add JWT filter before UsernamePasswordAuthenticationFilter
-                .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                                                // Role-based protection
+                                                .requestMatchers("/api/v1/superadmin/**").hasRole("SUPER_ADMIN")
+                                                .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                                                .requestMatchers("/api/v1/coordinator/**")
+                                                .hasAnyRole("COORDINATOR", "ADMIN", "SUPER_ADMIN")
+                                                .requestMatchers("/api/v1/student/**")
+                                                .hasAnyRole("STUDENT", "COORDINATOR", "ADMIN", "SUPER_ADMIN")
 
-                // Add Security Headers
-                .headers(headers -> headers
-                        // Content Security Policy
-                        .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'; " +
-                                        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-                                        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-                                        "img-src 'self' data: https://*.tile.openstreetmap.org https://*.tile.osm.org; "
-                                        +
-                                        "font-src 'self' https://fonts.gstatic.com data:; " +
-                                        "connect-src 'self' http://localhost:8080 http://127.0.0.1:8080 http://localhost:3000; "
-                                        +
-                                        "frame-ancestors 'none'; "))
-                        // X-Frame-Options: DENY
-                        .frameOptions(frame -> frame.deny())
-                        // X-Content-Type-Options: nosniff
-                        .contentTypeOptions(Customizer.withDefaults())
-                        // Referrer-Policy: strict-origin-when-cross-origin
-                        .referrerPolicy(referrer -> referrer.policy(
-                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
-                        // Strict-Transport-Security: max-age=31536000; includeSubDomains
-                        .httpStrictTransportSecurity(hsts -> hsts
-                                .includeSubDomains(true)
-                                .maxAgeInSeconds(31536000)))
+                                                // All other requests require authentication
+                                                .anyRequest().authenticated())
 
-                // Exception handling
-                .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(customAuthenticationEntryPoint)
-                        .accessDeniedHandler(customAccessDeniedHandler));
+                                // Add JWT filter before UsernamePasswordAuthenticationFilter
+                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
-        return http.build();
-    }
+                                // Add Security Headers
+                                .headers(headers -> headers
+                                                // Content Security Policy
+                                                .contentSecurityPolicy(csp -> csp
+                                                                .policyDirectives("default-src 'self'; " +
+                                                                                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                                                                                +
+                                                                                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+                                                                                +
+                                                                                "img-src 'self' data: https://*.tile.openstreetmap.org https://*.tile.osm.org; "
+                                                                                +
+                                                                                "font-src 'self' https://fonts.gstatic.com data:; "
+                                                                                +
+                                                                                "connect-src 'self' http://localhost:8080 http://127.0.0.1:8080 http://localhost:3000; "
+                                                                                +
+                                                                                "frame-ancestors 'none'; "))
+                                                // X-Frame-Options: DENY
+                                                .frameOptions(frame -> frame.deny())
+                                                // X-Content-Type-Options: nosniff
+                                                .contentTypeOptions(Customizer.withDefaults())
+                                                // Referrer-Policy: strict-origin-when-cross-origin
+                                                .referrerPolicy(referrer -> referrer.policy(
+                                                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                                                // Strict-Transport-Security: max-age=31536000; includeSubDomains
+                                                .httpStrictTransportSecurity(hsts -> hsts
+                                                                .includeSubDomains(true)
+                                                                .maxAgeInSeconds(31536000)))
 
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
-    }
+                                // Exception handling
+                                .exceptionHandling(exceptions -> exceptions
+                                                .authenticationEntryPoint(customAuthenticationEntryPoint)
+                                                .accessDeniedHandler(customAccessDeniedHandler));
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
+                return http.build();
+        }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
-    }
+        @Bean
+        public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+                return config.getAuthenticationManager();
+        }
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder(12);
+        }
 }

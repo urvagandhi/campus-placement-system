@@ -99,4 +99,13 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
      */
     @Query("SELECT COUNT(rt) FROM RefreshToken rt WHERE rt.user.id = :userId AND rt.isRevoked = false AND rt.expiresAt > CURRENT_TIMESTAMP")
     long countActiveTokensByUserId(@Param("userId") Long userId);
+
+    /**
+     * Count all active sessions across the entire system.
+     * Used for super admin dashboard statistics.
+     *
+     * @return total count of active sessions
+     */
+    @Query("SELECT COUNT(rt) FROM RefreshToken rt WHERE rt.isRevoked = false AND rt.expiresAt > CURRENT_TIMESTAMP")
+    long countAllActiveSessions();
 }

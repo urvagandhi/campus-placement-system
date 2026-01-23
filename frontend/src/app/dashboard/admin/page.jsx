@@ -1,25 +1,52 @@
 'use client';
 
 import Card from '@/components/ui/Card';
+import { analyticsApi } from '@/services/api';
 import { Briefcase, Building2, GraduationCap, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-
-// Mock Data
-const ADMIN_STATS = [
-    { label: 'Total Students', value: '2,450', icon: GraduationCap, color: 'bg-blue-100/50 text-blue-600' },
-    { label: 'Total TPOs', value: '12', icon: Users, color: 'bg-purple-100/50 text-purple-600' },
-    { label: 'Total Drives', value: '45', icon: Briefcase, color: 'bg-orange-100/50 text-orange-600' },
-    { label: 'Active Drives', value: '8', icon: Briefcase, color: 'bg-emerald-100/50 text-emerald-600' },
-];
+import { toast } from 'react-hot-toast';
 
 export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        totalStudents: 0,
+        totalTPOs: 0,
+        totalDrives: 0,
+        activeDrives: 0
+    });
 
     useEffect(() => {
-        // Simulate loading
-        const timer = setTimeout(() => setLoading(false), 800);
-        return () => clearTimeout(timer);
+        const fetchStats = async () => {
+            try {
+                const response = await analyticsApi.getOverview();
+                const data = response.data || {};
+                
+                setStats({
+                    totalStudents: data.totalStudents || 0,
+                    totalTPOs: data.totalAVG || 0, // Using a placeholder if specific TPO count isn't in overview
+                    totalDrives: data.totalDrives || 0,
+                    activeDrives: data.activeDrives || 0
+                });
+            } catch (error) {
+                console.error("Admin stats fetch error:", error);
+                
+                // If endpoint fails (e.g. 403), we might want to fail gracefully
+                if (error.message && error.message.includes("Access Denied")) {
+                    toast.error("You do not have permission to view analytics.");
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
     }, []);
+
+    const adminStats = [
+        { label: 'Total Students', value: stats.totalStudents, icon: GraduationCap, color: 'bg-blue-100/50 text-blue-600' },
+        { label: 'Total Drives', value: stats.totalDrives, icon: Briefcase, color: 'bg-orange-100/50 text-orange-600' },
+        { label: 'Active Drives', value: stats.activeDrives, icon: Briefcase, color: 'bg-emerald-100/50 text-emerald-600' },
+    ];
 
     return (
         <div className="space-y-8 animate-fade-in">
@@ -38,7 +65,7 @@ export default function AdminDashboard() {
                         </div>
                     ))
                 ) : (
-                    ADMIN_STATS.map((stat) => {
+                    adminStats.map((stat) => {
                         const Icon = stat.icon;
                         return (
                             <Card key={stat.label} hover={true} className="border-0 ring-1 ring-black/5 bg-white/60 backdrop-blur-xl">

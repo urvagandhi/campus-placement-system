@@ -56,6 +56,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final HttpServletRequest httpServletRequest;
     private final CookieUtils cookieUtils;
+    private final com.campusplacement.settings.SystemSettingsService systemSettingsService;
 
     /**
      * Authenticates a user and generates a JWT token.
@@ -66,6 +67,7 @@ public class AuthService {
      * <ol>
      * <li>Find user by email</li>
      * <li>Verify password</li>
+     * <li>Check maintenance mode (if not SUPER_ADMIN)</li>
      * <li>Check user is active</li>
      * <li>Check college is active (if not SUPER_ADMIN)</li>
      * <li>Generate JWT token</li>
@@ -85,8 +87,9 @@ public class AuthService {
         // 0. HONEYPOT CHECK (Anti-Automation)
         if (request.getUsername() != null && !request.getUsername().isEmpty()) {
             log.warn("BOT DETECTED: Honeypot field filled by robot! IP: {}", getClientIpAddress());
-            // Fail silently with generic error to not expose we know it's a bot
-            throw new AuthenticationException("Invalid credentials");
+            // Return specific error so frontend can instruct user to refresh (handling
+            // false positives)
+            throw new AuthenticationException("Anti-automation check failed. Please refresh the page.");
         }
 
         String email = request.getEmail().toLowerCase().trim();
@@ -103,6 +106,13 @@ public class AuthService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             auditLogin(user.getId(), email, false, SecurityAuditEventType.LOGIN);
             throw new AuthenticationException("Invalid credentials");
+        }
+
+        // 2.5 MAINTENANCE MODE CHECK
+        if (systemSettingsService.isMaintenanceMode() && user.getRole() != UserRole.SUPER_ADMIN) {
+            log.warn("Login blocked due to maintenance mode for user: {}", email);
+            auditLogin(user.getId(), email, false, SecurityAuditEventType.LOGIN);
+            throw new AuthenticationException("System is under maintenance. Please try again later...!!!");
         }
 
         // 3. Check user is active
@@ -306,6 +316,9 @@ public class AuthService {
 
         return LoginResponseDTO.builder()
                 .userId(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
                 .role(user.getRole().name())
                 .collegeId(user.getCollege() != null ? user.getCollege().getId() : null)
                 .redirectUrl(buildRedirectUrl(user.getRole()))

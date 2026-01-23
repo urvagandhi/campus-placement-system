@@ -5,31 +5,21 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
+import api from '@/services/api';
 import { AlertTriangle, ArrowLeft, Plus, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-
-// Mock Academic Calendar Data for Conflict Detection
-const ACADEMIC_CALENDAR = [
-    { department: 'Computer Science and Engineering', event: 'End Semester Exams', startDate: '2023-11-20', endDate: '2023-11-30' },
-    { department: 'Information Technology', event: 'Practical Exams', startDate: '2023-11-15', endDate: '2023-11-18' },
-    { department: 'Mechanical Engineering', event: 'Industrial Visit', startDate: '2023-11-25', endDate: '2023-11-26' },
-    { department: 'Electronics and Communication', event: 'Project Reviews', startDate: '2023-11-22', endDate: '2023-11-24' }
-];
-
-const DEPARTMENTS = [
-    'Computer Science and Engineering',
-    'Information Technology',
-    'Electronics and Communication',
-    'Mechanical Engineering',
-    'Civil Engineering'
-];
+import toast from 'react-hot-toast';
 
 export default function CreateDrivePage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    
+    // Data State
+    const [availableDepartments, setAvailableDepartments] = useState([]);
+    const [departmentsLoading, setDepartmentsLoading] = useState(true);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -40,47 +30,63 @@ export default function CreateDrivePage() {
         description: '',
         date: '',
         deadline: '',
-        departments: [],
+        departmentIds: [], // Stores IDs now
         skills: [],
-        remarks: '' // Department constraints/remarks
+        remarks: ''
     });
 
     // Conflict State
     const [academicConflicts, setAcademicConflicts] = useState([]);
+    const [checkingConflicts, setCheckingConflicts] = useState(false);
 
-    // Check for conflicts whenever date or departments change
+    // Fetch Departments on Mount
     useEffect(() => {
-        checkAcademicConflicts();
-    }, [formData.date, formData.departments]);
-
-    const checkAcademicConflicts = () => {
-        if (!formData.date || formData.departments.length === 0) {
-            setAcademicConflicts([]);
-            return;
-        }
-
-        const driveDate = new Date(formData.date);
-        const conflicts = [];
-
-        formData.departments.forEach(dept => {
-            const deptEvents = ACADEMIC_CALENDAR.filter(e => e.department === dept);
-            deptEvents.forEach(event => {
-                const start = new Date(event.startDate);
-                const end = new Date(event.endDate);
-
-                // Check if drive date falls within event range (inclusive)
-                if (driveDate >= start && driveDate <= end) {
-                    conflicts.push({
-                        department: dept,
-                        event: event.event,
-                        dateRange: `${event.startDate} to ${event.endDate}`
-                    });
+        const fetchDeps = async () => {
+            try {
+                const response = await api.organizations.getDepartments();
+                if (response.success) {
+                    setAvailableDepartments(response.data);
                 }
-            });
-        });
+            } catch (error) {
+                console.error('Failed to fetch departments:', error);
+                toast.error('Failed to load departments');
+            } finally {
+                setDepartmentsLoading(false);
+            }
+        };
+        fetchDeps();
+    }, []);
 
-        setAcademicConflicts(conflicts);
-    };
+    // Check for conflicts whenever date or departmentIds change
+    useEffect(() => {
+        const check = async () => {
+            if (!formData.date || formData.departmentIds.length === 0) {
+                setAcademicConflicts([]);
+                return;
+            }
+
+            setCheckingConflicts(true);
+            try {
+                // Pass IDs and date to backend
+                const response = await api.organizations.checkConflicts(formData.departmentIds, formData.date);
+                if (response.success) {
+                    setAcademicConflicts(response.data.map(event => ({
+                        department: event.organizationUnitName, // Backend sends Unit Name
+                        event: event.name,
+                        dateRange: `${event.startDate} to ${event.endDate}`
+                    })));
+                }
+            } catch (error) {
+                console.error('Conflict check failed:', error);
+            } finally {
+                setCheckingConflicts(false);
+            }
+        };
+        
+        // Debounce slightly to avoid rapid calls
+        const timer = setTimeout(check, 500);
+        return () => clearTimeout(timer);
+    }, [formData.date, formData.departmentIds]);
 
     const [skillInput, setSkillInput] = useState('');
 
@@ -89,12 +95,12 @@ export default function CreateDrivePage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const toggleDepartment = (dept) => {
+    const toggleDepartment = (deptId) => {
         setFormData(prev => ({
             ...prev,
-            departments: prev.departments.includes(dept)
-                ? prev.departments.filter(d => d !== dept)
-                : [...prev.departments, dept]
+            departmentIds: prev.departmentIds.includes(deptId)
+                ? prev.departmentIds.filter(id => id !== deptId)
+                : [...prev.departmentIds, deptId]
         }));
     };
 
@@ -122,11 +128,26 @@ export default function CreateDrivePage() {
         e.preventDefault();
         setLoading(true);
 
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            const payload = {
+                ...formData,
+                eligibleDepartmentIds: formData.departmentIds, // Map to backend usage
+                packageLpa: parseFloat(formData.salary), // Ensure number
+                minCgpa: parseFloat(formData.minCGPA)
+            };
+            
+            const response = await api.drives.create(payload);
+            if (response.success) {
+                 setShowSuccessModal(true);
+            } else {
+                toast.error(response.message || 'Failed to create drive');
+            }
+        } catch (error) {
+            console.error('Create drive error:', error);
+            toast.error(error.message || 'Failed to create drive');
+        } finally {
             setLoading(false);
-            setShowSuccessModal(true);
-        }, 1500);
+        }
     };
 
     const handleSuccessClose = () => {
@@ -172,11 +193,13 @@ export default function CreateDrivePage() {
                                 required
                             />
                             <Input
-                                label="Salary Package / Stipend"
+                                label="Salary Package (LPA)"
                                 name="salary"
+                                type="number"
+                                step="0.1"
                                 value={formData.salary}
                                 onChange={handleChange}
-                                placeholder="e.g. 12 LPA or 50k/month"
+                                placeholder="e.g. 12"
                                 required
                             />
                             <div className="flex flex-col md:flex-row gap-4">
@@ -221,22 +244,29 @@ export default function CreateDrivePage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Eligible Departments</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Eligible Departments
+                                {departmentsLoading && <span className="ml-2 text-xs text-gray-400">Loading...</span>}
+                            </label>
+                            
                             <div className="flex flex-wrap gap-2">
-                                {DEPARTMENTS.map(dept => (
+                                {availableDepartments.map(dept => (
                                     <div
-                                        key={dept}
-                                        onClick={() => toggleDepartment(dept)}
-                                        className={`px-3 py-1.5 rounded-full text-sm cursor-pointer border transition-all select-none ${formData.departments.includes(dept)
+                                        key={dept.id}
+                                        onClick={() => toggleDepartment(dept.id)}
+                                        className={`px-3 py-1.5 rounded-full text-sm cursor-pointer border transition-all select-none ${formData.departmentIds.includes(dept.id)
                                             ? 'bg-indigo-600 text-white border-indigo-600'
                                             : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
                                             }`}
                                     >
-                                        {dept}
+                                        {dept.name}
                                     </div>
                                 ))}
+                                {!departmentsLoading && availableDepartments.length === 0 && (
+                                     <p className="text-sm text-gray-500 italic">No departments found.</p>
+                                )}
                             </div>
-                            {formData.departments.length === 0 && (
+                            {formData.departmentIds.length === 0 && (
                                 <p className="text-xs text-red-500 mt-1">Please select at least one department.</p>
                             )}
                         </div>
@@ -251,7 +281,7 @@ export default function CreateDrivePage() {
                                     <h4 className="text-sm font-semibold text-amber-900">Academic Schedule Conflict Detected</h4>
                                     <p className="text-sm text-amber-700 mt-1">
                                         The selected date conflicts with the following department schedules.
-                                        This is informational; you may proceed if approved by updates.
+                                        This is informational; you may proceed if approved.
                                     </p>
                                     <ul className="mt-3 space-y-1">
                                         {academicConflicts.map((conflict, idx) => (
@@ -300,7 +330,8 @@ export default function CreateDrivePage() {
                                 rows="4"
                                 value={formData.description}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all resize-none"
+                                className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all resize-none"
+                                required
                             />
                         </div>
 
@@ -325,7 +356,7 @@ export default function CreateDrivePage() {
                             type="submit"
                             loading={loading}
                             className="w-full md:w-auto"
-                            disabled={formData.departments.length === 0}
+                            disabled={formData.departmentIds.length === 0 || loading}
                         >
                             Save & Publish Drive
                         </Button>

@@ -56,40 +56,44 @@ export function AuthProvider({ children }) {
     }, []);
 
     /**
-     * Check authentication on mount by calling /me endpoint
+     * Check authentication status
      */
-    useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                // Try to get current user from backend (uses httpOnly cookie)
-                const response = await apiGetCurrentUser();
-                if (response.success && response.data) {
-                    const userData = {
-                        id: response.data.userId,
-                        role: response.data.role,
-                        collegeId: response.data.collegeId,
-                        email: response.data.email || '',
-                        name: localStorage.getItem(USER_NAME_KEY) || response.data.email?.split('@')[0] || 'User',
-                    };
-                    setUser(userData);
-                    storeUserData(userData);
-                } else {
-                    // Not authenticated
-                    clearAuthData();
-                    setUser(null);
-                }
-            } catch (error) {
-                // Not authenticated or error
-                console.debug('Auth check failed:', error.message);
+    const checkAuth = useCallback(async () => {
+        try {
+            // Try to get current user from backend (uses httpOnly cookie)
+            const response = await apiGetCurrentUser();
+            if (response.success && response.data) {
+                const userData = {
+                    id: response.data.userId,
+                    role: response.data.role,
+                    collegeId: response.data.collegeId,
+                    email: response.data.email || '',
+                    name: response.data.name || localStorage.getItem(USER_NAME_KEY) || response.data.email?.split('@')[0] || 'User',
+                    phoneNumber: response.data.phoneNumber || ''
+                };
+                setUser(userData);
+                storeUserData(userData);
+            } else {
+                // Not authenticated
                 clearAuthData();
                 setUser(null);
-            } finally {
-                setIsLoading(false);
             }
-        };
-
-        checkAuth();
+        } catch (error) {
+            // Not authenticated or error
+            console.debug('Auth check failed:', error.message);
+            clearAuthData();
+            setUser(null);
+        } finally {
+            setIsLoading(false);
+        }
     }, [clearAuthData, storeUserData]);
+
+    /**
+     * Check authentication on mount
+     */
+    useEffect(() => {
+        checkAuth();
+    }, [checkAuth]);
 
     /**
      * Login function
@@ -190,7 +194,8 @@ export function AuthProvider({ children }) {
         isLoading,
         login,
         logout,
-    }), [user, isLoading, login, logout]);
+        refreshUser: checkAuth
+    }), [user, isLoading, login, logout, checkAuth]);
 
     return (
         <AuthContext.Provider value={value}>

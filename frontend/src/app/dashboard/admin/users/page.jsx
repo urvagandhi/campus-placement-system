@@ -4,55 +4,86 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Table from '@/components/ui/Table';
+import { useAuth } from '@/hooks/useAuth';
+import api from '@/services/api';
 import { Search } from 'lucide-react';
-import { useState } from 'react';
-
-// Mock Data
-const MOCK_USERS = [
-    { id: 1, name: 'Admin User', email: 'admin@college.edu', role: 'ADMIN', status: 'Active' },
-    { id: 2, name: 'John Doe', email: 'john@student.edu', role: 'STUDENT', status: 'Active' },
-    { id: 3, name: 'Jane Smith', email: 'jane@coordinator.edu', role: 'COORDINATOR', status: 'Active' },
-    { id: 4, name: 'Inactive Student', email: 'inactive@student.edu', role: 'STUDENT', status: 'Inactive' },
-    { id: 5, name: 'New TPO', email: 'tpo@college.edu', role: 'COORDINATOR', status: 'Active' },
-];
+import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 
 export default function ManageUsers() {
-    const [users, setUsers] = useState(MOCK_USERS);
+    const { user: currentUser } = useAuth();
+    const [users, setUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const currentUserEmail = 'admin@college.edu'; // Mock current user
+    const [loading, setLoading] = useState(true);
 
-    const handleStatusToggle = (userId) => {
-        setUsers(users.map(user => {
-            if (user.id === userId) {
-                // Prevent deactivating self
-                if (user.email === currentUserEmail) {
-                    alert('You cannot deactivate your own account.');
-                    return user;
-                }
-                return { ...user, status: user.status === 'Active' ? 'Inactive' : 'Active' };
+    // Debounce search
+    useEffect(() => {
+        const fetchUsers = async () => {
+             setLoading(true);
+             try {
+                 const response = await api.users.getAll(searchTerm);
+                 if (response.success) {
+                     setUsers(response.data);
+                 }
+             } catch (error) {
+                 console.error('Failed to fetch users:', error);
+                 toast.error('Failed to load users');
+             } finally {
+                 setLoading(false);
+             }
+        };
+
+        const timer = setTimeout(fetchUsers, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    const handleStatusToggle = async (userId, currentStatus) => {
+        if (!currentUser) return;
+        
+        // Prevent deactivating self
+        if (userId === currentUser.id) {
+            toast.error('You cannot deactivate your own account.');
+            return;
+        }
+
+        const newStatus = currentStatus === 'Active' ? 'Inactive' : 'Active';
+        
+        try {
+            const response = await api.users.updateStatus(userId, newStatus);
+            if (response.success) {
+                setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: newStatus, isActive: newStatus === 'Active' } : u));
+                toast.success(`User ${newStatus === 'Active' ? 'activated' : 'deactivated'}`);
+            } else {
+                 toast.error(response.message || 'Update failed');
             }
-            return user;
-        }));
+        } catch (error) {
+            console.error('Status update error:', error);
+            toast.error('Failed to update status');
+        }
     };
 
-    const handleRoleChange = (userId, newRole) => {
-        setUsers(users.map(user => {
-            if (user.id === userId) {
-                // Prevent demoting self
-                if (user.email === currentUserEmail) {
-                    alert('You cannot change your own role.');
-                    return user;
-                }
-                return { ...user, role: newRole };
-            }
-            return user;
-        }));
-    };
+    const handleRoleChange = async (userId, newRole) => {
+        if (!currentUser) return;
 
-    const filteredUsers = users.filter(user =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+        // Prevent demoting self
+        if (userId === currentUser.id) {
+             toast.error('You cannot change your own role.');
+             return;
+        }
+
+        try {
+            const response = await api.users.updateRole(userId, newRole);
+            if (response.success) {
+                setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+                toast.success('Role updated successfully');
+            } else {
+                toast.error(response.message || 'Role update failed');
+            }
+        } catch (error) {
+            console.error('Role update error:', error);
+            toast.error('Failed to update role');
+        }
+    };
 
     const columns = [
         { header: 'Name', accessor: 'name' },
@@ -65,7 +96,7 @@ export default function ManageUsers() {
                     value={role}
                     onChange={(e) => handleRoleChange(row.id, e.target.value)}
                     className="block w-full pl-3 pr-10 py-1 text-xs border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md bg-white border"
-                    disabled={row.email === currentUserEmail}
+                    disabled={currentUser && row.id === currentUser.id}
                 >
                     <option value="STUDENT">Student</option>
                     <option value="COORDINATOR">Coordinator</option>
@@ -89,8 +120,8 @@ export default function ManageUsers() {
                 <Button
                     variant={row.status === 'Active' ? 'danger' : 'secondary'}
                     size="sm"
-                    onClick={() => handleStatusToggle(row.id)}
-                    disabled={row.email === currentUserEmail}
+                    onClick={() => handleStatusToggle(row.id, row.status)}
+                    disabled={currentUser && row.id === currentUser.id}
                 >
                     {row.status === 'Active' ? 'Deactivate' : 'Activate'}
                 </Button>
@@ -119,7 +150,8 @@ export default function ManageUsers() {
             <Card className="border border-gray-100 shadow-sm">
                 <Table
                     columns={columns}
-                    data={filteredUsers}
+                    data={users}
+                    isLoading={loading}
                     emptyMessage="No users found"
                 />
             </Card>
