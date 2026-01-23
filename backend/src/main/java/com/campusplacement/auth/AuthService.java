@@ -129,7 +129,8 @@ public class AuthService {
             }
             if (college.getIsActive() == null || !college.getIsActive()) {
                 auditLogin(user.getId(), email, false, SecurityAuditEventType.LOGIN);
-                throw new CollegeInactiveException("College is not active. Please contact administrator.");
+                throw new CollegeInactiveException(
+                        "Access Denied: Your institution has been deactivated. Please contact your administrator.");
             }
         }
 

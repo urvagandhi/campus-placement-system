@@ -18,6 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 public class CollegeService {
 
     private final CollegeRepository collegeRepository;
+    // TODO: Re-enable notification service after fixing notification system
+    // private final com.campusplacement.notifications.NotificationService
+    // notificationService;
 
     @SuppressWarnings("null")
     @Transactional
@@ -32,11 +35,21 @@ public class CollegeService {
                 .address(dto.getAddress())
                 .website(dto.getWebsite())
                 .contactEmail(dto.getContactEmail())
+                .adminName(dto.getAdminName())
+                .contactPhone(dto.getContactPhone())
                 .isActive(true)
                 .build();
 
         College savedCollege = collegeRepository.save(college);
         log.info("College created: {} ({})", savedCollege.getName(), savedCollege.getCode());
+
+        // Notify System
+        // notificationService.createSystemNotification(
+        // "INFO",
+        // "New College Registered",
+        // "A new college '" + savedCollege.getName() + "' (" + savedCollege.getCode()
+        // + ") has been registered on the platform.",
+        // null);
 
         return mapToDTO(savedCollege);
     }
@@ -49,6 +62,8 @@ public class CollegeService {
                 .address(college.getAddress())
                 .website(college.getWebsite())
                 .contactEmail(college.getContactEmail())
+                .adminName(college.getAdminName())
+                .contactPhone(college.getContactPhone())
                 .isActive(college.getIsActive())
                 .build();
     }
@@ -81,6 +96,14 @@ public class CollegeService {
         log.info("College status updated: {} ({}) -> isActive: {}", savedCollege.getName(), savedCollege.getCode(),
                 active);
 
+        // Notify System
+        // notificationService.createSystemNotification(
+        // "WARNING",
+        // "College Status Updated",
+        // "College '" + savedCollege.getName() + "' has been " + (active ?
+        // "activated" : "deactivated") + ".",
+        // null);
+
         return mapToDTO(savedCollege);
     }
 
@@ -98,5 +121,12 @@ public class CollegeService {
 
         collegeRepository.delete(college);
         log.info("College deleted: {} ({})", college.getName(), college.getCode());
+
+        // Notify System
+        notificationService.createSystemNotification(
+                "SECURITY",
+                "College Deleted",
+                "College '" + college.getName() + "' (" + college.getCode() + ") has been deleted from the platform.",
+                null);
     }
 }

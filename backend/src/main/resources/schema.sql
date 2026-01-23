@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS colleges (
     address             TEXT,
     website             VARCHAR(255),
     contact_email       VARCHAR(255),
+    admin_name          VARCHAR(255),
+    contact_phone       VARCHAR(50),
     is_active           BOOLEAN         DEFAULT TRUE,
     created_at          TIMESTAMP       NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMP
@@ -67,7 +69,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash       VARCHAR(255)    NOT NULL,
     role                VARCHAR(50)     NOT NULL, -- STUDENT, COORDINATOR, ADMIN, SUPER_ADMIN
     college_id          BIGINT          REFERENCES colleges(id) ON DELETE CASCADE,
-    phone_number        VARCHAR(50),
+    phone_number        VARCHAR(50), -- E.164 format (e.g. +919876543210)
     profile_image_url   VARCHAR(500),
     last_login          TIMESTAMP,
     is_active           BOOLEAN         DEFAULT TRUE,
@@ -405,5 +407,77 @@ ON CONFLICT (id) DO NOTHING;
 
 
 -- ================================================================================
--- END OF SCHEMA
+-- TABLE: notifications
+-- Entity: com.campusplacement.notifications.Notification
 -- ================================================================================
+-- Purpose: Stores user notifications for system events, alerts, and updates.
+--          Supports read/unread status and notification types.
+--
+-- Notification Types:
+--   - SYSTEM      - System-wide announcements
+--   - SECURITY    - Security alerts and warnings
+--   - DRIVE       - Placement drive updates
+--   - APPLICATION - Application status changes
+--   - GENERAL     - General notifications
+--
+-- Key Design Decisions:
+--   - user_id is optional (NULL for system-wide notifications)
+--   - is_read flag for tracking read status
+--   - type enum for filtering and categorization
+--   - created_at for chronological ordering
+--
+-- References: users(id) - optional
+-- ================================================================================
+
+CREATE TABLE IF NOT EXISTS notifications (
+    -- Primary identifier
+    id                  BIGSERIAL       PRIMARY KEY,
+
+    -- User who receives the notification (NULL for system-wide notifications)
+    user_id             BIGINT          REFERENCES users(id) ON DELETE CASCADE,
+
+    -- Notification type for categorization
+    type                VARCHAR(50)     NOT NULL DEFAULT 'GENERAL',
+
+    -- Notification title/heading
+    title               VARCHAR(255)    NOT NULL,
+
+    -- Notification message/content
+    message             TEXT            NOT NULL,
+
+    -- Optional link/URL for action
+    link                VARCHAR(500),
+
+    -- Read status
+    is_read             BOOLEAN         DEFAULT FALSE,
+
+    -- Read timestamp (NULL if unread)
+    read_at             TIMESTAMP,
+
+    -- Audit timestamps
+    created_at          TIMESTAMP       NOT NULL DEFAULT NOW(),
+    updated_at          TIMESTAMP
+);
+
+-- -----------------------------------------------------------------------------
+-- INDEXES: notifications
+-- -----------------------------------------------------------------------------
+-- idx_notifications_user: Find all notifications for a user
+-- idx_notifications_unread: Filter unread notifications
+-- idx_notifications_type: Filter by notification type
+-- idx_notifications_created: Sort by creation date (newest first)
+-- -----------------------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(is_read) WHERE is_read = FALSE;
+CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type);
+CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read) WHERE is_read = FALSE;
+
+
+-- ================================================================================
+-- END OF SCHEMA DEFINITION
+-- ================================================================================
+-- Next Steps:
+--   1. Run seed-data-v2.sql to populate test data
+--   2. Start the Spring Boot application to validate Hibernate mapping
+--   3. Test login with credentials from seed data

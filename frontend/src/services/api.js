@@ -400,6 +400,34 @@ export const usersApi = {
     },
 };
 
+// ==================== Notifications API ====================
+
+export const notificationsApi = {
+    getAll: async (page = 0, size = 10) => {
+        return fetchApi(`/notifications?page=${page}&size=${size}`);
+    },
+
+    getUnread: async () => {
+        return fetchApi('/notifications/unread');
+    },
+
+    getUnreadCount: async () => {
+        return fetchApi('/notifications/unread/count');
+    },
+
+    markAsRead: async (id) => {
+        return fetchApi(`/notifications/${id}/read`, {
+            method: 'PUT',
+        });
+    },
+
+    markAllAsRead: async () => {
+        return fetchApi('/notifications/read-all', {
+            method: 'PUT',
+        });
+    },
+};
+
 // ==================== Profile API ====================
 
 export const profileApi = {
@@ -429,6 +457,7 @@ const api = {
     organizations: organizationsApi,
     users: usersApi,
     profile: profileApi,
+    notifications: notificationsApi,
 };
 
 export default api;

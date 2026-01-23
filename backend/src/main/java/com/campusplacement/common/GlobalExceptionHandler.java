@@ -74,7 +74,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleCollegeInactiveException(CollegeInactiveException ex) {
         log.warn("College inactive: {}", ex.getMessage());
         return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
+                .status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error(ex.getMessage()));
     }
 

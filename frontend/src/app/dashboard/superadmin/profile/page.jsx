@@ -9,6 +9,7 @@ import { Lock, Save, User, Phone, Mail, Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { CardSkeleton, Skeleton } from '@/components/ui/Skeleton';
+import PhoneInput from '@/components/ui/PhoneInput';
 
 export default function ProfileSettingsPage() {
     const { user, refreshUser } = useAuth();
@@ -135,12 +136,11 @@ export default function ProfileSettingsPage() {
                             <p className="text-xs text-gray-400 mt-1 ml-1">Email cannot be changed.</p>
                         </div>
 
-                        <Input
+                        <PhoneInput
                             label="Phone Number"
                             value={profileData.phoneNumber}
                             onChange={(e) => setProfileData({ ...profileData, phoneNumber: e.target.value })}
-                            icon={Phone}
-                            placeholder="+91 98765 43210"
+                            placeholder="98765 43210"
                         />
 
                         <div className="pt-2 flex justify-end">

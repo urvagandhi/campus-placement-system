@@ -13,6 +13,7 @@ import {
     Users
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { Skeleton, StatsSkeleton, ListSkeleton } from '@/components/ui/Skeleton';
 
 /**
@@ -50,8 +51,10 @@ export default function SecurityDashboard() {
         try {
             setIsExporting(true);
             await exportAuditLogs();
+            toast.success('Security audit logs exported successfully');
         } catch (err) {
-            alert(err.message || 'Export failed');
+            console.error(err);
+            toast.error(err.message || 'Failed to export audit logs');
         } finally {
             setIsExporting(false);
         }

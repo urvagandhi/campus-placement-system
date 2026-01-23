@@ -16,6 +16,9 @@ public class SystemSettingsService {
 
     private static final Long SETTINGS_ID = 1L;
     private final SystemSettingsRepository repository;
+    // TODO: Re-enable notification service after fixing notification system
+    // private final com.campusplacement.notifications.NotificationService
+    // notificationService;
 
     /**
      * Get current system settings.
@@ -75,9 +78,32 @@ public class SystemSettingsService {
 
             if (!wasInMaintenance && dto.getMaintenanceMode()) {
                 log.warn("SYSTEM: Maintenance mode ENABLED by super admin");
+                // Notify System
+                // notificationService.createSystemNotification(
+                // "SYSTEM",
+                // "Maintenance Mode Enabled",
+                // "System is now in maintenance mode. Access may be restricted.",
+                // null);
             } else if (wasInMaintenance && !dto.getMaintenanceMode()) {
                 log.info("SYSTEM: Maintenance mode DISABLED by super admin");
+                // Notify System
+                // notificationService.createSystemNotification(
+                // "SYSTEM",
+                // "Maintenance Mode Disabled",
+                // "System maintenance mode has been disabled. The platform is now fully
+                // accessible.",
+                // null);
             }
+        }
+
+        if (dto.getMaintenanceMode() != null && dto.getMaintenanceMode() && !settings.getMaintenanceMode()) { // Check
+                                                                                                              // correctly
+                                                                                                              // if was
+                                                                                                              // disabled
+            // Just handled in logic above, wait, logic above is:
+            // wasInMaintenance (from DB) -> set new value
+            // logic: if (!wasInMaintenance && dto.getMaintenanceMode()) -> ENABLED
+            // if (wasInMaintenance && !dto.getMaintenanceMode()) -> DISABLED
         }
 
         @SuppressWarnings("null")

@@ -40,13 +40,13 @@ export default function SystemSettings() {
         fetchSettings();
     }, []);
 
-    const updateSetting = async (key, value) => {
+    const updateSetting = async (key, value, customSuccessMessage = 'Setting updated') => {
         setUpdating(true);
         try {
             const response = await api.users.updateSettings({ [key]: value });
             if (response.success) {
                 setSettings(response.data);
-                toast.success('Setting updated');
+                toast.success(customSuccessMessage);
             } else {
                 toast.error(response.message || 'Failed to update');
             }
@@ -59,7 +59,12 @@ export default function SystemSettings() {
     };
 
     const toggleRegistration = () => {
-        updateSetting('registrationEnabled', !settings.registrationEnabled);
+        const newState = !settings.registrationEnabled;
+        updateSetting(
+            'registrationEnabled', 
+            newState, 
+            `User registration ${newState ? 'enabled' : 'disabled'} successfully`
+        );
     };
 
     const handleMaintenanceClick = () => {
@@ -69,7 +74,11 @@ export default function SystemSettings() {
 
     const confirmMaintenanceToggle = async () => {
         setShowConfirmModal(false);
-        await updateSetting('maintenanceMode', pendingMaintenanceState);
+        await updateSetting(
+            'maintenanceMode', 
+            pendingMaintenanceState,
+            `Maintenance mode ${pendingMaintenanceState ? 'activated' : 'deactivated'} successfully`
+        );
     };
 
     if (loading) {

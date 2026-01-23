@@ -23,10 +23,13 @@ public class CreateCollegeDTO {
 
     @NotBlank(message = "College Code is required")
     @Size(min = 2, max = 20, message = "College Code must be between 2 and 20 characters")
-    @Pattern(regexp = "^[A-Z0-9]+$", message = "College Code must contain only uppercase letters and numbers")
+    @Pattern(regexp = "^[a-zA-Z0-9\\-\\s]+$", message = "College Code can contain letters, numbers, spaces and hyphens")
     private String code;
 
     private String address;
     private String website;
     private String contactEmail;
+    private String adminName;
+    @jakarta.validation.constraints.Pattern(regexp = "^\\+[1-9]\\d{1,14}$", message = "Phone number must be in E.164 format (e.g., +919876543210)")
+    private String contactPhone;
 }

@@ -16,5 +16,7 @@ public class CollegeDTO {
     private String address;
     private String website;
     private String contactEmail;
+    private String adminName;
+    private String contactPhone;
     private Boolean isActive;
 }

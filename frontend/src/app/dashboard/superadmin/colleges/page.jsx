@@ -4,10 +4,12 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
+import PhoneInput from '@/components/ui/PhoneInput';
 import Modal from '@/components/ui/Modal';
 import Table from '@/components/ui/Table';
+import AlertDialog from '@/components/ui/AlertDialog'; // Import new component
 import api from '@/services/api';
-import { Building2, Globe, MapPin, Plus, Search, Trash2, Ban, CheckCircle } from 'lucide-react';
+import { Building2, Globe, MapPin, Plus, Search, Trash2, Ban, CheckCircle, Phone, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { CardSkeleton, ListSkeleton, Skeleton } from '@/components/ui/Skeleton';
@@ -23,7 +25,21 @@ export default function ManageCollegesPage() {
         code: '',
         address: '',
         contactEmail: '',
+        adminName: '',
+        contactPhone: '',
         website: ''
+    });
+
+
+    // Alert Dialog State
+    const [alertState, setAlertState] = useState({
+        isOpen: false,
+        title: '',
+        description: '',
+        confirmText: 'Confirm',
+        variant: 'primary',
+        onConfirm: () => {},
+        loading: false
     });
 
     const fetchColleges = async () => {
@@ -46,9 +62,9 @@ export default function ManageCollegesPage() {
     }, []);
 
     const filteredColleges = colleges.filter(college =>
-        college.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        college.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        college.code?.toLowerCase().includes(searchTerm.toLowerCase())
+        (college.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (college.address || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (college.code || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const columns = [
@@ -71,7 +87,7 @@ export default function ManageCollegesPage() {
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            handleStatusToggle(college);
+                            handleStatusToggleClick(college);
                         }}
                         disabled={actionLoading === college.id}
                         className={`p-1.5 rounded-lg transition-colors ${
@@ -100,18 +116,33 @@ export default function ManageCollegesPage() {
     ];
 
     const [actionLoading, setActionLoading] = useState(null);
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [collegeToDelete, setCollegeToDelete] = useState(null);
+    const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [viewCollege, setViewCollege] = useState(null);
 
-    const handleStatusToggle = async (college) => {
-        if (!confirm(`Are you sure you want to ${college.isActive ? 'deactivate' : 'activate'} ${college.name}?`)) return;
+    // --- Actions ---
 
+    // 1. Status Toggle (Activate/Deactivate)
+    const handleStatusToggleClick = (college) => {
+        const isDeactivating = college.isActive;
+        setAlertState({
+            isOpen: true,
+            title: isDeactivating ? 'Deactivate College?' : 'Activate College?',
+            description: `Are you sure you want to ${isDeactivating ? 'deactivate' : 'activate'} ${college.name}? Users may lose access.`,
+            confirmText: isDeactivating ? 'Deactivate' : 'Activate',
+            variant: isDeactivating ? 'danger' : 'primary',
+            onConfirm: () => performStatusUpdate(college)
+        });
+    };
+
+    const performStatusUpdate = async (college) => {
+        setAlertState(prev => ({ ...prev, loading: true }));
         try {
             setActionLoading(college.id);
             const response = await api.users.updateCollegeStatus(college.id, !college.isActive);
             if (response.success) {
-                toast.success(`College ${college.isActive ? 'deactivated' : 'activated'} successfully`);
+                toast.success(`${college.name} has been ${college.isActive ? 'deactivated' : 'activated'} successfully`);
                 setColleges(prev => prev.map(c => c.id === college.id ? response.data : c));
+                setAlertState(prev => ({ ...prev, isOpen: false }));
             } else {
                 toast.error(response.message || 'Failed to update status');
             }
@@ -120,25 +151,31 @@ export default function ManageCollegesPage() {
             toast.error('Failed to update status');
         } finally {
             setActionLoading(null);
+            setAlertState(prev => ({ ...prev, loading: false }));
         }
     };
 
+    // 2. Delete College
     const handleDeleteClick = (college) => {
-        setCollegeToDelete(college);
-        setDeleteModalOpen(true);
+        setAlertState({
+            isOpen: true,
+            title: 'Delete College?',
+            description: `Are you sure you want to delete ${college.name}? This action cannot be undone.`,
+            confirmText: 'Delete',
+            variant: 'danger',
+            onConfirm: () => performDelete(college)
+        });
     };
 
-    const confirmDelete = async () => {
-        if (!collegeToDelete) return;
-
+    const performDelete = async (college) => {
+        setAlertState(prev => ({ ...prev, loading: true }));
         try {
-            setActionLoading(collegeToDelete.id);
-            const response = await api.users.deleteCollege(collegeToDelete.id);
+            setActionLoading(college.id);
+            const response = await api.users.deleteCollege(college.id);
             if (response.success) {
-                toast.success('College deleted successfully');
-                setColleges(prev => prev.filter(c => c.id !== collegeToDelete.id));
-                setDeleteModalOpen(false);
-                setCollegeToDelete(null);
+                toast.success(`${college.name} has been deleted successfully`);
+                setColleges(prev => prev.filter(c => c.id !== college.id));
+                setAlertState(prev => ({ ...prev, isOpen: false }));
             } else {
                 toast.error(response.message || 'Failed to delete college');
             }
@@ -147,29 +184,31 @@ export default function ManageCollegesPage() {
             toast.error('Failed to delete college');
         } finally {
             setActionLoading(null);
+            setAlertState(prev => ({ ...prev, loading: false }));
         }
     };
 
-    const [viewModalOpen, setViewModalOpen] = useState(false);
-    const [viewCollege, setViewCollege] = useState(null);
-
-    const handleRowClick = (college) => {
-        setViewCollege(college);
-        setViewModalOpen(true);
-    };
-
+    // 3. Create College
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
         try {
             const response = await api.users.createCollege(newCollege);
             if (response.success) {
-                toast.success('College registered successfully');
+                toast.success(`${response.data.name} registered successfully`);
                 setColleges(prev => [...prev, response.data]);
                 setIsModalOpen(false);
-                setNewCollege({ name: '', code: '', address: '', contactEmail: '', website: '' });
+                setNewCollege({ name: '', code: '', address: '', contactEmail: '', adminName: '', contactPhone: '', website: '' });
             } else {
-                toast.error(response.message || 'Failed to register college');
+                if (response.data && typeof response.data === 'object') {
+                    // Start formatting validation errors
+                    const errorMessages = Object.entries(response.data)
+                        .map(([field, msg]) => `${msg}`)
+                        .join('\n');
+                    toast.error(errorMessages || response.message || 'Failed to register college');
+                } else {
+                    toast.error(response.message || 'Failed to register college');
+                }
             }
         } catch (error) {
             console.error('Create college error:', error);
@@ -177,6 +216,11 @@ export default function ManageCollegesPage() {
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const handleRowClick = (college) => {
+        setViewCollege(college);
+        setViewModalOpen(true);
     };
 
     const handleChange = (e) => {
@@ -225,7 +269,6 @@ export default function ManageCollegesPage() {
                 )}
             </Card>
 
-
             <Modal
                 isOpen={viewModalOpen}
                 onClose={() => setViewModalOpen(false)}
@@ -246,11 +289,11 @@ export default function ManageCollegesPage() {
                         <div className="grid grid-cols-1 gap-4 text-sm">
                             <div className="flex items-start gap-3">
                                 <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-                                    <MapPin className="h-5 w-5" />
+                                    <User className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <p className="font-medium text-gray-900">Address</p>
-                                    <p className="text-gray-600 mt-0.5">{viewCollege.address || 'N/A'}</p>
+                                    <p className="font-medium text-gray-900">Admin Name</p>
+                                    <p className="text-gray-600 mt-0.5">{viewCollege.adminName || 'N/A'}</p>
                                 </div>
                             </div>
 
@@ -261,6 +304,26 @@ export default function ManageCollegesPage() {
                                 <div>
                                     <p className="font-medium text-gray-900">Contact Email</p>
                                     <p className="text-gray-600 mt-0.5">{viewCollege.contactEmail || 'N/A'}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                                    <Phone className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <p className="font-medium text-gray-900">Contact Phone</p>
+                                    <p className="text-gray-600 mt-0.5">{viewCollege.contactPhone || 'N/A'}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                                    <MapPin className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <p className="font-medium text-gray-900">Address</p>
+                                    <p className="text-gray-600 mt-0.5">{viewCollege.address || 'N/A'}</p>
                                 </div>
                             </div>
 
@@ -338,6 +401,21 @@ export default function ManageCollegesPage() {
                         placeholder="admin@college.edu"
                         required
                     />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Input
+                            label="Admin Name"
+                            name="adminName"
+                            value={newCollege.adminName}
+                            onChange={handleChange}
+                            placeholder="e.g. Dr. Rajesh Kumar"
+                        />
+                        <PhoneInput
+                            label="Contact Phone"
+                            value={newCollege.contactPhone}
+                            onChange={(e) => handleChange({ target: { name: 'contactPhone', value: e.target.value } })}
+                            required
+                        />
+                    </div>
                     <Input
                         label="Website"
                         name="website"
@@ -354,35 +432,17 @@ export default function ManageCollegesPage() {
                 </form>
             </Modal>
 
-            {/* Delete Confirmation Modal */}
-            <Modal
-                isOpen={deleteModalOpen}
-                onClose={() => setDeleteModalOpen(false)}
-                title="Confirm Deletion"
-            >
-                <div className="space-y-4">
-                    <p className="text-gray-600">
-                        Are you sure you want to delete <strong>{collegeToDelete?.name}</strong>? 
-                        This action cannot be undone and will remove all associated data (users, departments, etc).
-                    </p>
-                    <div className="pt-4 flex gap-3">
-                        <Button 
-                            onClick={confirmDelete} 
-                            loading={actionLoading === collegeToDelete?.id}
-                            className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                        >
-                            Delete Permanently
-                        </Button>
-                        <Button 
-                            variant="secondary" 
-                            onClick={() => setDeleteModalOpen(false)} 
-                            className="flex-1"
-                        >
-                            Cancel
-                        </Button>
-                    </div>
-                </div>
-            </Modal>
+            {/* Premium Apple-style Alert Dialog */}
+            <AlertDialog
+                isOpen={alertState.isOpen}
+                onClose={() => setAlertState(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={alertState.onConfirm}
+                title={alertState.title}
+                description={alertState.description}
+                confirmText={alertState.confirmText}
+                variant={alertState.variant}
+                loading={alertState.loading}
+            />
         </div>
     );
 }

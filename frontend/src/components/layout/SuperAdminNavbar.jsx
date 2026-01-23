@@ -2,8 +2,9 @@
 
 import Logo from '@/components/ui/Logo';
 import UserProfileDropdown from '@/components/ui/UserProfileDropdown';
+import NotificationDropdown from '@/components/common/NotificationDropdown';
 import { useAuth } from '@/hooks/useAuth';
-import { Bell, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 export default function SuperAdminNavbar() {
     const { user, logout } = useAuth();
@@ -36,10 +37,7 @@ export default function SuperAdminNavbar() {
 
                     {/* Right Side Actions */}
                     <div className="flex items-center gap-2 sm:gap-4">
-                        <button className="relative p-2.5 text-gray-500 hover:text-indigo-600 transition-colors rounded-xl hover:bg-gray-100/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
-                            <Bell className="h-5 w-5" />
-                            <span className="absolute top-2.5 right-2.5 h-2 w-2 bg-red-500 rounded-full border-2 border-white shadow-sm"></span>
-                        </button>
+                        <NotificationDropdown />
 
                         <div className="h-8 w-px bg-gray-200/50 mx-1 hidden sm:block"></div>
 

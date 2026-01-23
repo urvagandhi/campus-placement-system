@@ -52,6 +52,12 @@ public class College extends BaseEntity {
     private String website;
     private String contactEmail;
 
+    @Column(name = "admin_name")
+    private String adminName;
+
+    @Column(name = "contact_phone")
+    private String contactPhone;
+
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;

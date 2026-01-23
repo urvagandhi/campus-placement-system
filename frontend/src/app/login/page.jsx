@@ -49,8 +49,8 @@ export default function LoginPage() {
                 setError('Invalid email or password.');
             } else if (err.message.includes('deactivated')) {
                 setError('Your account has been deactivated. Please contact an administrator.');
-            } else if (err.message.includes('College')) {
-                setError('Your college is not active. Please contact an administrator.');
+            } else if (err.message.includes('institution') || err.message.includes('active')) {
+                setError('Access Denied: Your institution has been deactivated. Please contact your administrator.');
             } else if (err.message.includes('Anti-automation') || err.message.includes('refresh')) {
                 setError('Browser check failed. Please refresh the page and try again.');
             } else {
