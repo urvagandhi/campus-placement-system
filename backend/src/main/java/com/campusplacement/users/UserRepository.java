@@ -18,139 +18,156 @@ import com.campusplacement.common.UserRole;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    /**
-     * Finds a user by email (globally).
-     * Note: For multi-college, use findByEmailAndCollegeId.
-     */
-    Optional<User> findByEmail(String email);
+        /**
+         * Finds a user by email (globally).
+         * Note: For multi-college, use findByEmailAndCollegeId.
+         */
+        Optional<User> findByEmail(String email);
 
-    /**
-     * Finds a user by email within a specific college.
-     * This is the recommended method for multi-college authentication.
-     */
-    @Query("SELECT u FROM User u WHERE u.email = :email AND (u.college.id = :collegeId OR u.college IS NULL)")
-    Optional<User> findByEmailAndCollegeId(@Param("email") String email, @Param("collegeId") Long collegeId);
+        /**
+         * Finds a user by email within a specific college.
+         * This is the recommended method for multi-college authentication.
+         */
+        @Query("SELECT u FROM User u WHERE u.email = :email AND (u.college.id = :collegeId OR u.college IS NULL)")
+        Optional<User> findByEmailAndCollegeId(@Param("email") String email, @Param("collegeId") Long collegeId);
 
-    /**
-     * Finds a user by email, including SUPER_ADMIN (college is null).
-     * Email comparison is case-insensitive.
-     */
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.college WHERE LOWER(u.email) = LOWER(:email)")
-    Optional<User> findByEmailWithCollege(@Param("email") String email);
+        /**
+         * Finds a user by email, including SUPER_ADMIN (college is null).
+         * Email comparison is case-insensitive.
+         */
+        @Query("SELECT u FROM User u LEFT JOIN FETCH u.college WHERE LOWER(u.email) = LOWER(:email)")
+        Optional<User> findByEmailWithCollege(@Param("email") String email);
 
-    /**
-     * Finds a user by ID with college eagerly fetched.
-     * Used by JWT authentication filter to avoid LazyInitializationException.
-     */
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.college WHERE u.id = :id")
-    Optional<User> findByIdWithCollege(@Param("id") Long id);
+        /**
+         * Finds a user by ID with college eagerly fetched.
+         * Used by JWT authentication filter to avoid LazyInitializationException.
+         */
+        @Query("SELECT u FROM User u LEFT JOIN FETCH u.college WHERE u.id = :id")
+        Optional<User> findByIdWithCollege(@Param("id") Long id);
 
-    /**
-     * Checks if a user exists with the given email.
-     */
-    boolean existsByEmail(String email);
+        /**
+         * Checks if a user exists with the given email.
+         */
+        boolean existsByEmail(String email);
 
-    /**
-     * Checks if a user exists with the given email in a specific college.
-     */
-    @Query("SELECT COUNT(u) > 0 FROM User u WHERE u.email = :email AND u.college.id = :collegeId")
-    boolean existsByEmailAndCollegeId(@Param("email") String email, @Param("collegeId") Long collegeId);
+        /**
+         * Checks if a user exists with the given email in a specific college.
+         */
+        @Query("SELECT COUNT(u) > 0 FROM User u WHERE u.email = :email AND u.college.id = :collegeId")
+        boolean existsByEmailAndCollegeId(@Param("email") String email, @Param("collegeId") Long collegeId);
 
-    /**
-     * Finds all users with a specific role.
-     */
-    List<User> findByRole(UserRole role);
+        /**
+         * Finds all users with a specific role.
+         */
+        List<User> findByRole(UserRole role);
 
-    /**
-     * Finds all active users.
-     */
-    List<User> findByIsActiveTrue();
+        /**
+         * Finds all active users.
+         */
+        List<User> findByIsActiveTrue();
 
-    /**
-     * Finds all active users with a specific role.
-     */
-    List<User> findByRoleAndIsActiveTrue(UserRole role);
+        /**
+         * Finds all active users with a specific role.
+         */
+        List<User> findByRoleAndIsActiveTrue(UserRole role);
 
-    /**
-     * Finds all users in a specific college.
-     */
-    List<User> findByCollegeId(Long collegeId);
+        /**
+         * Finds all users in a specific college.
+         */
+        List<User> findByCollegeId(Long collegeId);
 
-    /**
-     * Finds all active users in a specific college with a specific role.
-     */
-    List<User> findByCollegeIdAndRoleAndIsActiveTrue(Long collegeId, UserRole role);
+        /**
+         * Finds all active users in a specific college with a specific role.
+         */
+        List<User> findByCollegeIdAndRoleAndIsActiveTrue(Long collegeId, UserRole role);
 
-    // ==================== Paginated Queries ====================
+        // ==================== Paginated Queries ====================
 
-    /**
-     * Finds all active users with pagination.
-     * Used by SUPER_ADMIN to view all users across colleges.
-     *
-     * @param pageable Pagination parameters
-     * @return Page of active users
-     */
-    Page<User> findByIsActiveTrue(Pageable pageable);
+        /**
+         * Finds all active users with pagination.
+         * Used by SUPER_ADMIN to view all users across colleges.
+         *
+         * @param pageable Pagination parameters
+         * @return Page of active users
+         */
+        Page<User> findByIsActiveTrue(Pageable pageable);
 
-    /**
-     * Finds all users in a specific college with pagination.
-     * Used by ADMIN to view users within their college.
-     *
-     * @param collegeId College ID for scope filtering
-     * @param pageable  Pagination parameters
-     * @return Page of users in the college
-     */
-    Page<User> findByCollegeId(Long collegeId, Pageable pageable);
+        /**
+         * Finds all users in a specific college with pagination.
+         * Used by ADMIN to view users within their college.
+         *
+         * @param collegeId College ID for scope filtering
+         * @param pageable  Pagination parameters
+         * @return Page of users in the college
+         */
+        Page<User> findByCollegeId(Long collegeId, Pageable pageable);
 
-    /**
-     * Finds active users in a college with pagination.
-     *
-     * @param collegeId College ID for scope filtering
-     * @param pageable  Pagination parameters
-     * @return Page of active users in the college
-     */
-    Page<User> findByCollegeIdAndIsActiveTrue(Long collegeId, Pageable pageable);
+        /**
+         * Finds active users in a college with pagination.
+         *
+         * @param collegeId College ID for scope filtering
+         * @param pageable  Pagination parameters
+         * @return Page of active users in the college
+         */
+        Page<User> findByCollegeIdAndIsActiveTrue(Long collegeId, Pageable pageable);
 
-    /**
-     * Finds users by role within a college with pagination.
-     *
-     * @param collegeId College ID for scope filtering
-     * @param role      User role filter
-     * @param pageable  Pagination parameters
-     * @return Page of users matching criteria
-     */
-    Page<User> findByCollegeIdAndRole(Long collegeId, UserRole role, Pageable pageable);
+        /**
+         * Finds users by role within a college with pagination.
+         *
+         * @param collegeId College ID for scope filtering
+         * @param role      User role filter
+         * @param pageable  Pagination parameters
+         * @return Page of users matching criteria
+         */
+        Page<User> findByCollegeIdAndRole(Long collegeId, UserRole role, Pageable pageable);
 
-    /**
-     * Searches users by name or email within a college.
-     * Supports partial matching for autocomplete/search functionality.
-     *
-     * @param collegeId College ID for scope filtering
-     * @param search    Search term (matches name or email)
-     * @param pageable  Pagination parameters
-     * @return Page of matching users
-     */
-    @Query("SELECT u FROM User u WHERE u.college.id = :collegeId " +
-            "AND (LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
-            "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))")
-    Page<User> searchByCollegeId(
-            @Param("collegeId") Long collegeId,
-            @Param("search") String search,
-            Pageable pageable);
+        /**
+         * Searches users by name or email within a college.
+         * Supports partial matching for autocomplete/search functionality.
+         *
+         * @param collegeId College ID for scope filtering
+         * @param search    Search term (matches name or email)
+         * @param pageable  Pagination parameters
+         * @return Page of matching users
+         */
+        @Query("SELECT u FROM User u WHERE u.college.id = :collegeId " +
+                        "AND (LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))")
+        Page<User> searchByCollegeId(
+                        @Param("collegeId") Long collegeId,
+                        @Param("search") String search,
+                        Pageable pageable);
 
-    /**
-     * Counts users by college ID.
-     *
-     * @param collegeId College ID
-     * @return User count in the college
-     */
-    long countByCollegeId(Long collegeId);
+        /**
+         * Counts users by college ID.
+         *
+         * @param collegeId College ID
+         * @return User count in the college
+         */
+        long countByCollegeId(Long collegeId);
 
-    /**
-     * Counts active users by college ID.
-     *
-     * @param collegeId College ID
-     * @return Active user count in the college
-     */
-    long countByCollegeIdAndIsActiveTrue(Long collegeId);
+        /**
+         * Counts active users by college ID.
+         *
+         * @param collegeId College ID
+         * @return Active user count in the college
+         */
+        long countByCollegeIdAndIsActiveTrue(Long collegeId);
+
+        /**
+         * Finds the primary ADMIN user for a college.
+         * The primary admin is the one assigned to the ROOT organization unit.
+         *
+         * @param collegeId College ID
+         * @return The primary admin user, or empty if not found
+         */
+        @Query("SELECT u FROM User u " +
+                        "JOIN u.assignments a " +
+                        "JOIN a.organizationUnit ou " +
+                        "WHERE u.college.id = :collegeId " +
+                        "AND u.role = com.campusplacement.common.UserRole.ADMIN " +
+                        "AND u.isActive = true " +
+                        "AND ou.isRoot = true " +
+                        "ORDER BY u.id ASC")
+        Optional<User> findPrimaryAdminByCollegeId(@Param("collegeId") Long collegeId);
 }

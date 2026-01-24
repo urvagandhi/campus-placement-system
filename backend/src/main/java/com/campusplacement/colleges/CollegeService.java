@@ -5,6 +5,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.campusplacement.colleges.dto.CollegeDTO;
 import com.campusplacement.colleges.dto.CreateCollegeDTO;
+import com.campusplacement.users.User;
+import com.campusplacement.users.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CollegeService {
 
     private final CollegeRepository collegeRepository;
+    private final UserRepository userRepository;
     // TODO: Re-enable notification service after fixing notification system
     // private final com.campusplacement.notifications.NotificationService
     // notificationService;
@@ -55,6 +58,9 @@ public class CollegeService {
     }
 
     private CollegeDTO mapToDTO(College college) {
+        // Dynamically fetch the admin user's name instead of using static field
+        String adminName = resolveAdminName(college);
+
         return CollegeDTO.builder()
                 .id(college.getId())
                 .name(college.getName())
@@ -62,10 +68,29 @@ public class CollegeService {
                 .address(college.getAddress())
                 .website(college.getWebsite())
                 .contactEmail(college.getContactEmail())
-                .adminName(college.getAdminName())
+                .adminName(adminName)
                 .contactPhone(college.getContactPhone())
                 .isActive(college.getIsActive())
                 .build();
+    }
+
+    /**
+     * Resolves the admin name for a college by finding the ADMIN user assigned
+     * to the ROOT organization unit (university level).
+     * Falls back to the static adminName field if no primary admin is found.
+     *
+     * @param college The college to resolve admin name for
+     * @return The primary admin user's name, or the static field value, or null
+     */
+    private String resolveAdminName(College college) {
+        if (college == null || college.getId() == null) {
+            return null;
+        }
+
+        // Find the admin assigned to the ROOT organization unit (university level)
+        return userRepository.findPrimaryAdminByCollegeId(college.getId())
+                .map(User::getName)
+                .orElseGet(college::getAdminName); // Fallback to static field
     }
 
     /**
