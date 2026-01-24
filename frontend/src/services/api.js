@@ -470,6 +470,21 @@ export const profileApi = {
     },
 };
 
+// ==================== Colleges API ====================
+
+export const collegesApi = {
+    getMyCollege: async () => {
+        return fetchApi('/colleges/my');
+    },
+
+    updateMyCollege: async (data) => {
+        return fetchApi('/colleges/my', {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    },
+};
+
 const api = {
     auth: authApi,
     students: studentsApi,
@@ -482,6 +497,7 @@ const api = {
     users: usersApi,
     profile: profileApi,
     notifications: notificationsApi,
+    colleges: collegesApi,
 };
 
 export default api;

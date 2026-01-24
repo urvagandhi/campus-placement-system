@@ -290,6 +290,16 @@ public class CollegeService {
     // ==================== Read Operations ====================
 
     /**
+     * Get college by ID.
+     */
+    @SuppressWarnings("null")
+    public CollegeDTO getCollegeById(Long id) {
+        College college = collegeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("College not found with id: " + id));
+        return mapToDTO(college);
+    }
+
+    /**
      * Get all colleges (for Super Admin).
      */
     public List<CollegeDTO> getAllColleges() {
@@ -299,6 +309,28 @@ public class CollegeService {
     }
 
     // ==================== Status Management ====================
+
+    /**
+     * Update college details (for Admin).
+     */
+    @SuppressWarnings("null")
+    @Transactional
+    public CollegeDTO updateCollegeDetails(Long id, com.campusplacement.colleges.dto.UpdateCollegeDetailsDTO dto) {
+        College college = collegeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("College not found with id: " + id));
+
+        if (dto.getName() != null)
+            college.setName(dto.getName());
+        if (dto.getAddress() != null)
+            college.setAddress(dto.getAddress());
+        if (dto.getWebsite() != null)
+            college.setWebsite(dto.getWebsite());
+        if (dto.getContactPhone() != null)
+            college.setContactPhone(dto.getContactPhone());
+
+        College savedCollege = collegeRepository.save(college);
+        return mapToDTO(savedCollege);
+    }
 
     /**
      * Update the active status of a college.

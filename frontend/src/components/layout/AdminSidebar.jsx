@@ -3,7 +3,8 @@
 import {
     Building2,
     LayoutDashboard,
-    Users
+    Users,
+    Settings
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -15,6 +16,7 @@ export default function AdminSidebar() {
         { name: 'Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
         { name: 'Manage Users', href: '/dashboard/admin/users', icon: Users },
         { name: 'Departments', href: '/dashboard/admin/departments', icon: Building2 },
+        { name: 'College Settings', href: '/dashboard/admin/settings', icon: Settings },
     ];
 
     const isActive = (path) => pathname === path || pathname.startsWith(`${path}/`);
