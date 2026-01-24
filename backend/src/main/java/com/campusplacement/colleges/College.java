@@ -1,7 +1,10 @@
 package com.campusplacement.colleges;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.hibernate.annotations.SQLRestriction;
 
 import com.campusplacement.common.BaseEntity;
 import com.campusplacement.organizations.OrganizationUnit;
@@ -35,6 +38,7 @@ import lombok.Setter;
  */
 @Entity
 @Table(name = "colleges")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -62,10 +66,21 @@ public class College extends BaseEntity {
     @Builder.Default
     private Boolean isActive = true;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     // Relationship to organization units (the hierarchy)
     @OneToMany(mappedBy = "college", cascade = CascadeType.ALL)
     @Builder.Default
     private List<OrganizationUnit> organizationUnits = new ArrayList<>();
 
     // NOTE: emailDomain removed - now stored at OrganizationUnit level
+
+    /**
+     * Soft-deletes this college.
+     */
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+        this.isActive = false;
+    }
 }

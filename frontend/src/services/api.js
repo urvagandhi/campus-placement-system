@@ -159,6 +159,30 @@ export const authApi = {
     getCurrentUser: async () => {
         return fetchApi('/auth/me');
     },
+
+    /**
+     * Change password (first-login or authenticated)
+     * @param {Object} data - { token, newPassword, confirmPassword } for first-login
+     *                      - { currentPassword, newPassword, confirmPassword } for regular change
+     */
+    changePassword: async (data) => {
+        // First-login flow uses firstLoginToken, regular change uses currentPassword
+        const payload = {
+            newPassword: data.newPassword,
+            confirmPassword: data.confirmPassword,
+        };
+        
+        if (data.token) {
+            payload.firstLoginToken = data.token;
+        } else if (data.currentPassword) {
+            payload.currentPassword = data.currentPassword;
+        }
+        
+        return fetchApi('/password/change-password', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        });
+    },
 };
 
 // ==================== Students API ====================

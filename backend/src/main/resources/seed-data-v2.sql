@@ -4,8 +4,9 @@
 -- Generated from Java Entity classes on 2026-01-21
 -- Matches schema.sql exactly
 -- ================================================================================
--- PASSWORD FOR ALL USERS: password123
--- BCrypt Hash (cost 12): $2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2
+-- PASSWORD FOR ALL USERS: Password@123
+-- (Meets policy: 8+ chars, uppercase, lowercase, number, special char)
+-- BCrypt Hash (cost 12): $2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e
 -- ================================================================================
 
 
@@ -60,50 +61,50 @@ ON CONFLICT (id) DO NOTHING;
 -- SUPER ADMIN (Platform Owner)
 INSERT INTO users (id, username, full_name, email, password_hash, role, college_id, phone_number, is_active, created_at)
 VALUES
-    (1, 'superadmin', 'Platform Administrator', 'superadmin@placementpro.com', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'SUPER_ADMIN', NULL, '+919000000001', TRUE, NOW())
+    (1, 'superadmin', 'Platform Administrator', 'superadmin@placementpro.com', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'SUPER_ADMIN', NULL, '+919000000001', TRUE, NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- NIRMA UNIVERSITY USERS
 INSERT INTO users (id, username, full_name, email, password_hash, role, college_id, phone_number, is_active, created_at)
 VALUES
     -- University Admin
-    (2, 'admin_nirma', 'Dr. Karsanbhai Patel', 'admin@nirmauni.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'ADMIN', 1, '+919000000002', TRUE, NOW()),
+    (2, 'admin_nirma', 'Dr. Karsanbhai Patel', 'admin@nirmauni.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'ADMIN', 1, '+919000000002', TRUE, NOW()),
     -- Institute Admins
-    (3, 'admin_nirma_it', 'Dr. Amit Shah', 'admin.it@nirmauni.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'ADMIN', 1, '+919000000003', TRUE, NOW()),
-    (4, 'admin_nirma_law', 'Dr. Priya Mehta', 'admin.law@nirmauni.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'ADMIN', 1, '+919000000004', TRUE, NOW()),
+    (3, 'admin_nirma_it', 'Dr. Amit Shah', 'admin.it@nirmauni.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'ADMIN', 1, '+919000000003', TRUE, NOW()),
+    (4, 'admin_nirma_law', 'Dr. Priya Mehta', 'admin.law@nirmauni.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'ADMIN', 1, '+919000000004', TRUE, NOW()),
     -- T&P Coordinators
-    (5, 'tpo_nirma_it', 'Prof. Sunil Pandey', 'tpo.it@nirmauni.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'COORDINATOR', 1, '+919000000005', TRUE, NOW()),
-    (6, 'tpo_nirma_law', 'Prof. Meera Joshi', 'tpo.law@nirmauni.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'COORDINATOR', 1, '+919000000006', TRUE, NOW()),
+    (5, 'tpo_nirma_it', 'Prof. Sunil Pandey', 'tpo.it@nirmauni.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'COORDINATOR', 1, '+919000000005', TRUE, NOW()),
+    (6, 'tpo_nirma_law', 'Prof. Meera Joshi', 'tpo.law@nirmauni.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'COORDINATOR', 1, '+919000000006', TRUE, NOW()),
     -- Department Coordinators
-    (7, 'coord_cse_nirma', 'Prof. Rajesh Verma', 'coord.cse@nirmauni.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'COORDINATOR', 1, '+919000000007', TRUE, NOW()),
-    (8, 'coord_ce_nirma', 'Prof. Neha Sharma', 'coord.ce@nirmauni.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'COORDINATOR', 1, '+919000000008', TRUE, NOW()),
-    (9, 'coord_me_nirma', 'Prof. Vikram Singh', 'coord.me@nirmauni.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'COORDINATOR', 1, '+919000000009', TRUE, NOW()),
+    (7, 'coord_cse_nirma', 'Prof. Rajesh Verma', 'coord.cse@nirmauni.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'COORDINATOR', 1, '+919000000007', TRUE, NOW()),
+    (8, 'coord_ce_nirma', 'Prof. Neha Sharma', 'coord.ce@nirmauni.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'COORDINATOR', 1, '+919000000008', TRUE, NOW()),
+    (9, 'coord_me_nirma', 'Prof. Vikram Singh', 'coord.me@nirmauni.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'COORDINATOR', 1, '+919000000009', TRUE, NOW()),
     -- Students
-    (10, '23BCE001', 'Urva Gandhi', '23BCE001@nirmauni.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'STUDENT', 1, '+919000000010', TRUE, NOW()),
-    (11, '23BCE002', 'Raj Mehta', '23BCE002@nirmauni.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'STUDENT', 1, '+919000000011', TRUE, NOW()),
-    (12, '23CE001', 'Priya Patel', '23CE001@nirmauni.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'STUDENT', 1, '+919000000012', TRUE, NOW()),
-    (13, '23ME001', 'Amit Shah', '23ME001@nirmauni.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'STUDENT', 1, '+919000000013', TRUE, NOW())
+    (10, '23BCE001', 'Urva Gandhi', '23BCE001@nirmauni.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'STUDENT', 1, '+919000000010', TRUE, NOW()),
+    (11, '23BCE002', 'Raj Mehta', '23BCE002@nirmauni.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'STUDENT', 1, '+919000000011', TRUE, NOW()),
+    (12, '23CE001', 'Priya Patel', '23CE001@nirmauni.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'STUDENT', 1, '+919000000012', TRUE, NOW()),
+    (13, '23ME001', 'Amit Shah', '23ME001@nirmauni.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'STUDENT', 1, '+919000000013', TRUE, NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- PP SAVANI UNIVERSITY USERS
 INSERT INTO users (id, username, full_name, email, password_hash, role, college_id, phone_number, is_active, created_at)
 VALUES
     -- University Admin
-    (14, 'admin_ppsu', 'Dr. PP Savani', 'admin@ppsu.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'ADMIN', 2, '+919000000014', TRUE, NOW()),
+    (14, 'admin_ppsu', 'Dr. PP Savani', 'admin@ppsu.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'ADMIN', 2, '+919000000014', TRUE, NOW()),
     -- School Admins
-    (15, 'admin_ppsu_it', 'Dr. Ketan Patel', 'admin.it@ppsu.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'ADMIN', 2, '+919000000015', TRUE, NOW()),
-    (16, 'admin_ppsu_mgt', 'Dr. Sneha Desai', 'admin.mgt@ppsu.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'ADMIN', 2, '+919000000016', TRUE, NOW()),
+    (15, 'admin_ppsu_it', 'Dr. Ketan Patel', 'admin.it@ppsu.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'ADMIN', 2, '+919000000015', TRUE, NOW()),
+    (16, 'admin_ppsu_mgt', 'Dr. Sneha Desai', 'admin.mgt@ppsu.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'ADMIN', 2, '+919000000016', TRUE, NOW()),
     -- T&P Coordinators
-    (17, 'tpo_ppsu_it', 'Prof. Hardik Shah', 'tpo.it@ppsu.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'COORDINATOR', 2, '+919000000017', TRUE, NOW()),
-    (18, 'tpo_ppsu_mgt', 'Prof. Nisha Jain', 'tpo.mgt@ppsu.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'COORDINATOR', 2, '+919000000018', TRUE, NOW()),
+    (17, 'tpo_ppsu_it', 'Prof. Hardik Shah', 'tpo.it@ppsu.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'COORDINATOR', 2, '+919000000017', TRUE, NOW()),
+    (18, 'tpo_ppsu_mgt', 'Prof. Nisha Jain', 'tpo.mgt@ppsu.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'COORDINATOR', 2, '+919000000018', TRUE, NOW()),
     -- Department Coordinators
-    (19, 'coord_cs_ppsu', 'Prof. Yash Modi', 'coord.cs@ppsu.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'COORDINATOR', 2, '+919000000019', TRUE, NOW()),
-    (20, 'coord_it_ppsu', 'Prof. Ravi Kumar', 'coord.it@ppsu.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'COORDINATOR', 2, '+919000000020', TRUE, NOW()),
+    (19, 'coord_cs_ppsu', 'Prof. Yash Modi', 'coord.cs@ppsu.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'COORDINATOR', 2, '+919000000019', TRUE, NOW()),
+    (20, 'coord_it_ppsu', 'Prof. Ravi Kumar', 'coord.it@ppsu.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'COORDINATOR', 2, '+919000000020', TRUE, NOW()),
     -- Students
-    (21, '24CS001', 'Harsh Trivedi', '24CS001@ppsu.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'STUDENT', 2, '+919000000021', TRUE, NOW()),
-    (22, '24CS002', 'Pooja Sharma', '24CS002@ppsu.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'STUDENT', 2, '+919000000022', TRUE, NOW()),
-    (23, '24IT001', 'Nikhil Patel', '24IT001@ppsu.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'STUDENT', 2, '+919000000023', TRUE, NOW()),
-    (24, '24MBA001', 'Ankita Joshi', '24MBA001@ppsu.ac.in', '$2b$12$N9ciIVb1Cyxp.I6HQr3vuefOjhL66Y.7MrMv65zCzvSiuUydw/y.2', 'STUDENT', 2, '+919000000024', TRUE, NOW())
+    (21, '24CS001', 'Harsh Trivedi', '24CS001@ppsu.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'STUDENT', 2, '+919000000021', TRUE, NOW()),
+    (22, '24CS002', 'Pooja Sharma', '24CS002@ppsu.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'STUDENT', 2, '+919000000022', TRUE, NOW()),
+    (23, '24IT001', 'Nikhil Patel', '24IT001@ppsu.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'STUDENT', 2, '+919000000023', TRUE, NOW()),
+    (24, '24MBA001', 'Ankita Joshi', '24MBA001@ppsu.ac.in', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.AAOy8.wE5LXb5e', 'STUDENT', 2, '+919000000024', TRUE, NOW())
 ON CONFLICT (id) DO NOTHING;
 
 

@@ -155,19 +155,26 @@ public interface UserRepository extends JpaRepository<User, Long> {
         long countByCollegeIdAndIsActiveTrue(Long collegeId);
 
         /**
-         * Finds the primary ADMIN user for a college.
-         * The primary admin is the one assigned to the ROOT organization unit.
+         * Finds ADMIN users for a college, prioritizing those assigned to root org
+         * unit.
+         * Returns a list since there may be multiple admins.
          *
          * @param collegeId College ID
-         * @return The primary admin user, or empty if not found
+         * @return List of admin users, ordered by priority (root org unit first)
          */
         @Query("SELECT u FROM User u " +
-                        "JOIN u.assignments a " +
-                        "JOIN a.organizationUnit ou " +
+                        "LEFT JOIN UserAssignment a ON a.user.id = u.id " +
+                        "LEFT JOIN OrganizationUnit ou ON a.organizationUnit.id = ou.id AND ou.isRoot = true " +
                         "WHERE u.college.id = :collegeId " +
                         "AND u.role = com.campusplacement.common.UserRole.ADMIN " +
                         "AND u.isActive = true " +
-                        "AND ou.isRoot = true " +
-                        "ORDER BY u.id ASC")
-        Optional<User> findPrimaryAdminByCollegeId(@Param("collegeId") Long collegeId);
+                        "ORDER BY CASE WHEN ou.id IS NOT NULL THEN 0 ELSE 1 END, u.id ASC")
+        List<User> findAdminsByCollegeIdOrdered(@Param("collegeId") Long collegeId);
+
+        /**
+         * Simple fallback: Find any active ADMIN user for a college.
+         * Used when the complex query fails.
+         */
+        Optional<User> findFirstByCollegeIdAndRoleAndIsActiveTrue(Long collegeId,
+                        com.campusplacement.common.UserRole role);
 }

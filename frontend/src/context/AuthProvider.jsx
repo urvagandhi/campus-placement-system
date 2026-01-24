@@ -108,7 +108,7 @@ export function AuthProvider({ children }) {
                 throw new Error(response.message || 'Login failed');
             }
 
-            const { userId, role, collegeId, redirectUrl } = response.data;
+            const { userId, role, collegeId, redirectUrl, mustChangePassword, firstLoginToken, name } = response.data;
 
             // Store user data (not tokens - they're in httpOnly cookies)
             const userData = {
@@ -116,14 +116,19 @@ export function AuthProvider({ children }) {
                 role: role,
                 collegeId: collegeId,
                 email: email,
-                name: email?.split('@')[0] || 'User',
+                name: name || email?.split('@')[0] || 'User', // Use backend name, fallback to email prefix
             };
 
             storeUserData(userData);
             setUser(userData);
 
-            // Navigate to dashboard
-            router.push(redirectUrl || getRedirectUrl(role));
+            // Navigate to appropriate page
+            // If must change password, append the token to the redirect URL
+            let targetUrl = redirectUrl || getRedirectUrl(role);
+            if (mustChangePassword && firstLoginToken) {
+                targetUrl = `/change-password?token=${encodeURIComponent(firstLoginToken)}`;
+            }
+            router.push(targetUrl);
 
             return response;
         } catch (error) {

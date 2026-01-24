@@ -61,6 +61,7 @@ public class NotificationService {
      */
     @Transactional
     public void markAsRead(Long notificationId, Long userId) {
+        @SuppressWarnings("null")
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Notification not found"));
 
@@ -97,6 +98,7 @@ public class NotificationService {
      */
     @Transactional
     public NotificationDTO createUserNotification(Long userId, String type, String title, String message, String link) {
+        @SuppressWarnings("null")
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -109,6 +111,7 @@ public class NotificationService {
                 .isRead(false)
                 .build();
 
+        @SuppressWarnings("null")
         Notification saved = notificationRepository.save(notification);
         log.debug("Created notification {} for user {}", saved.getId(), userId);
         return toDTO(saved);
@@ -128,6 +131,7 @@ public class NotificationService {
                 .isRead(false)
                 .build();
 
+        @SuppressWarnings("null")
         Notification saved = notificationRepository.save(notification);
         log.debug("Created system notification {}", saved.getId());
         return toDTO(saved);

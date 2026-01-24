@@ -331,6 +331,7 @@ public class UserManagementService {
     @Transactional
     public UserDTO updateProfile(com.campusplacement.users.dto.ProfileUpdateDTO dto) {
         CustomUserDetails currentUserDetails = getCurrentUser();
+        @SuppressWarnings("null")
         User user = userRepository.findById(currentUserDetails.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
@@ -349,6 +350,7 @@ public class UserManagementService {
     @Transactional
     public void changePassword(com.campusplacement.users.dto.ChangePasswordDTO dto) {
         CustomUserDetails currentUserDetails = getCurrentUser();
+        @SuppressWarnings("null")
         User user = userRepository.findById(currentUserDetails.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 

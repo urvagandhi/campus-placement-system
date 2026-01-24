@@ -19,6 +19,7 @@ public class AiServiceHealthIndicator implements HealthIndicator {
     private final AiServiceProperties aiServiceProperties;
     private final RestTemplate restTemplate = new RestTemplate();
 
+    @SuppressWarnings("null")
     @Override
     public Health health() {
         try {

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.campusplacement.colleges.CollegeService;
 import com.campusplacement.colleges.dto.CollegeDTO;
+import com.campusplacement.colleges.dto.CollegeOnboardingResponse;
 import com.campusplacement.colleges.dto.CreateCollegeDTO;
 import com.campusplacement.common.ApiResponse;
 import com.campusplacement.common.Constants;
@@ -56,17 +57,19 @@ public class SuperAdminController {
     }
 
     /**
-     * Creates a new College.
+     * Creates a new College with full onboarding.
+     * Creates College, root Organization Unit, and Admin user.
+     * Returns admin credentials for Super Admin to share.
      * Only accessible by SUPER_ADMIN.
      */
     @PostMapping("/colleges")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<ApiResponse<CollegeDTO>> createCollege(
+    public ResponseEntity<ApiResponse<CollegeOnboardingResponse>> createCollege(
             @Valid @RequestBody CreateCollegeDTO request) {
-        CollegeDTO college = collegeService.createCollege(request);
+        CollegeOnboardingResponse response = collegeService.createCollege(request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(college, "College created successfully"));
+                .body(ApiResponse.success(response, "College registered successfully"));
     }
 
     /**

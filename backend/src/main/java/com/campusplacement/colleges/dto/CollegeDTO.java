@@ -15,8 +15,10 @@ public class CollegeDTO {
     private String code;
     private String address;
     private String website;
-    private String contactEmail;
-    private String adminName;
-    private String contactPhone;
+    private String contactEmail; // Institutional contact email
+    private String contactPhone; // Institutional contact phone
+    private String adminName; // Primary admin's name
+    private String adminEmail; // Primary admin's login email
+    private String adminPhone; // Primary admin's phone
     private Boolean isActive;
 }

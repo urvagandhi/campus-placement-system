@@ -1,5 +1,6 @@
 package com.campusplacement.colleges.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -10,6 +11,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * DTO for creating a new College.
+ * Includes admin account details for auto-creation during onboarding.
  */
 @Data
 @Builder
@@ -28,8 +30,33 @@ public class CreateCollegeDTO {
 
     private String address;
     private String website;
+
+    /**
+     * Institutional contact email (for general inquiries, not login).
+     */
     private String contactEmail;
-    private String adminName;
+
     @jakarta.validation.constraints.Pattern(regexp = "^\\+[1-9]\\d{1,14}$", message = "Phone number must be in E.164 format (e.g., +919876543210)")
     private String contactPhone;
+
+    // ==================== Admin Account Fields ====================
+
+    /**
+     * Full name of the college admin.
+     */
+    @NotBlank(message = "Admin Name is required")
+    private String adminName;
+
+    /**
+     * Admin login email (REQUIRED for account creation).
+     */
+    @NotBlank(message = "Admin Email is required")
+    @Email(message = "Invalid email format")
+    private String adminEmail;
+
+    /**
+     * Admin phone number (optional).
+     */
+    @jakarta.validation.constraints.Pattern(regexp = "^\\+[1-9]\\d{1,14}$", message = "Admin phone must be in E.164 format")
+    private String adminPhone;
 }

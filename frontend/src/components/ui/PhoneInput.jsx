@@ -3,40 +3,39 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, Phone } from 'lucide-react';
+import { getCountryCodes, PHONE_RULES, validatePhoneNumber } from '@/utils/phoneUtils';
 
-const COUNTRY_CODES = [
-    { code: '+91', country: 'IN', flag: '🇮🇳' },
-    { code: '+1', country: 'US', flag: '🇺🇸' },
-    { code: '+44', country: 'UK', flag: '🇬🇧' },
-    { code: '+61', country: 'AU', flag: '🇦🇺' },
-    { code: '+81', country: 'JP', flag: '🇯🇵' },
-    { code: '+49', country: 'DE', flag: '🇩🇪' },
-    { code: '+33', country: 'FR', flag: '🇫🇷' },
-    { code: '+971', country: 'AE', flag: '🇦🇪' },
-    { code: '+65', country: 'SG', flag: '🇸🇬' },
-];
+// Get country codes from utilities
+const COUNTRY_CODES = getCountryCodes();
 
 /**
  * Phone Input Component with Country Code Selector
  * Uses Portal for dropdown to escape overflow clipping
- * Premium unified design
+ * Premium unified design with country-specific validation
  */
 export default function PhoneInput({
     label,
     value,
     onChange,
-    error,
+    error: externalError,
     required = false,
     disabled = false,
+    showValidation = true,
     className = ''
 }) {
     const [countryCode, setCountryCode] = useState('+91');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
+    const [validationError, setValidationError] = useState(null);
     
     const dropdownTriggerRef = useRef(null);
     const [dropdownStyles, setDropdownStyles] = useState({});
+    
+    // Get current country rules
+    const currentRule = PHONE_RULES[countryCode] || { digits: 15, placeholder: '1234567890' };
+    const maxDigits = currentRule.digits;
+    const error = externalError || validationError;
 
     // Parse initial value & Sanitize
     useEffect(() => {
@@ -91,16 +90,50 @@ export default function PhoneInput({
     }, []);
 
     const handleNumberChange = (e) => {
-        const val = e.target.value.replace(/\D/g, ''); 
+        let val = e.target.value.replace(/\D/g, '');
+        
+        // Enforce max length based on country
+        if (val.length > maxDigits) {
+            val = val.slice(0, maxDigits);
+        }
+        
         setPhoneNumber(val);
+        
+        // Validate on change if showValidation is enabled
+        if (showValidation && val.length > 0) {
+            const result = validatePhoneNumber(countryCode, val);
+            setValidationError(result.valid ? null : result.error);
+        } else {
+            setValidationError(null);
+        }
+        
         onChange({ target: { value: val ? `${countryCode}${val}` : '' } });
     };
 
     const handleCountrySelect = (code) => {
         setCountryCode(code);
         setIsOpen(false);
-        if (phoneNumber) {
-            onChange({ target: { value: `${code}${phoneNumber}` } });
+        
+        // Re-validate with new country rules
+        const newRule = PHONE_RULES[code] || { digits: 15 };
+        let newNumber = phoneNumber;
+        
+        // Truncate if number exceeds new country's max digits
+        if (newNumber.length > newRule.digits) {
+            newNumber = newNumber.slice(0, newRule.digits);
+            setPhoneNumber(newNumber);
+        }
+        
+        // Validate with new country
+        if (showValidation && newNumber.length > 0) {
+            const result = validatePhoneNumber(code, newNumber);
+            setValidationError(result.valid ? null : result.error);
+        } else {
+            setValidationError(null);
+        }
+        
+        if (newNumber) {
+            onChange({ target: { value: `${code}${newNumber}` } });
         }
     };
 
@@ -157,7 +190,8 @@ export default function PhoneInput({
                     onChange={handleNumberChange}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
-                    placeholder="1234567890"
+                    placeholder={currentRule.placeholder}
+                    maxLength={maxDigits}
                     disabled={disabled}
                     className="flex-1 h-full bg-transparent border-none text-gray-900 text-sm font-medium placeholder-gray-400 focus:outline-none focus:ring-0 disabled:cursor-not-allowed disabled:text-gray-500 pr-3"
                 />
