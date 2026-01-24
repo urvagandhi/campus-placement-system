@@ -123,10 +123,11 @@ public class CollegeService {
         log.info("College deleted: {} ({})", college.getName(), college.getCode());
 
         // Notify System
-        notificationService.createSystemNotification(
-                "SECURITY",
-                "College Deleted",
-                "College '" + college.getName() + "' (" + college.getCode() + ") has been deleted from the platform.",
-                null);
+        // notificationService.createSystemNotification(
+        // "SECURITY",
+        // "College Deleted",
+        // "College '" + college.getName() + "' (" + college.getCode() + ") has been
+        // deleted from the platform.",
+        // null);
     }
 }

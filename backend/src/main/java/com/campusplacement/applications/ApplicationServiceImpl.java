@@ -26,8 +26,8 @@ import com.campusplacement.organizations.ScopeContext;
 import com.campusplacement.security.CustomUserDetails;
 import com.campusplacement.students.StudentProfile;
 import com.campusplacement.students.StudentRepository;
-import com.campusplacement.notifications.NotificationService;
-import com.campusplacement.notifications.NotificationType;
+// import com.campusplacement.notifications.NotificationService;
+// import com.campusplacement.notifications.NotificationType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -57,7 +57,7 @@ public class ApplicationServiceImpl implements ApplicationService {
     private final DriveEligibilityService eligibilityService;
     private final OrganizationScopeService scopeService;
     private final com.campusplacement.eligibility.EligibilityRepository eligibilityRepository;
-    private final NotificationService notificationService;
+    // private final NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -182,14 +182,14 @@ public class ApplicationServiceImpl implements ApplicationService {
         application = applicationRepository.save(application);
 
         // Notify Student
-        notificationService.createUserNotification(
-                student.getUser().getId(),
-                NotificationType.SUCCESS.name(),
-                "Application Submitted",
-                "You have successfully applied for " + drive.getTitle()
-                        + (drive.getCompany() != null ? " at " + drive.getCompany().getName() : ""),
-                (String) null // link
-        );
+        // notificationService.createUserNotification(
+        // student.getUser().getId(),
+        // NotificationType.SUCCESS.name(),
+        // "Application Submitted",
+        // "You have successfully applied for " + drive.getTitle()
+        // + (drive.getCompany() != null ? " at " + drive.getCompany().getName() : ""),
+        // (String) null // link
+        // );
 
         return mapToDTO(application);
     }
@@ -250,22 +250,24 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application savedApplication = applicationRepository.save(application);
 
         // Notify Student of status change
-        String notifTitle = "Application Status Updated";
-        String notifMessage = "Your application for " + drive.getTitle() + " has been updated to: " + status.name();
-        NotificationType notifType = NotificationType.INFO;
+        // String notifTitle = "Application Status Updated";
+        // String notifMessage = "Your application for " + drive.getTitle() + " has been
+        // updated to: " + status.name();
+        // NotificationType notifType = NotificationType.INFO;
 
-        if (status == ApplicationStatusType.SHORTLISTED || status == ApplicationStatusType.SELECTED) {
-            notifType = NotificationType.SUCCESS;
-        } else if (status == ApplicationStatusType.REJECTED) {
-            notifType = NotificationType.ERROR; // Or WARNING
-        }
+        // if (status == ApplicationStatusType.SHORTLISTED || status ==
+        // ApplicationStatusType.SELECTED) {
+        // notifType = NotificationType.SUCCESS;
+        // } else if (status == ApplicationStatusType.REJECTED) {
+        // notifType = NotificationType.ERROR; // Or WARNING
+        // }
 
-        notificationService.createUserNotification(
-                savedApplication.getStudent().getUser().getId(),
-                notifType.name(),
-                notifTitle,
-                notifMessage,
-                (String) null);
+        // notificationService.createUserNotification(
+        // savedApplication.getStudent().getUser().getId(),
+        // notifType.name(),
+        // notifTitle,
+        // notifMessage,
+        // (String) null);
 
         return mapToDTO(savedApplication);
     }
