@@ -19,7 +19,7 @@ import com.campusplacement.drives.DriveRepository;
 import com.campusplacement.drives.PlacementDrive;
 import com.campusplacement.eligibility.DriveEligibilityService;
 import com.campusplacement.organizations.OrganizationScopeService;
-import com.campusplacement.organizations.ScopeContext;
+import com.campusplacement.organizations.model.ScopeContext;
 import com.campusplacement.ranking.dto.RankingRequest;
 import com.campusplacement.security.CustomUserDetails;
 import com.campusplacement.students.StudentProfile;

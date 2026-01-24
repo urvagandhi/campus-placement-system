@@ -7,7 +7,7 @@ import java.util.List;
 import org.hibernate.annotations.SQLRestriction;
 
 import com.campusplacement.common.BaseEntity;
-import com.campusplacement.organizations.OrganizationUnit;
+import com.campusplacement.organizations.model.OrganizationUnit;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

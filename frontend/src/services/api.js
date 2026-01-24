@@ -352,8 +352,23 @@ export const organizationsApi = {
         return fetchApi('/organizations/events');
     },
 
+    getInstitutes: async () => {
+        return fetchApi('/organizations/institutes');
+    },
+
+    getHierarchy: async () => {
+        return fetchApi('/organizations/hierarchy');
+    },
+
     createEvent: async (data) => {
         return fetchApi('/organizations/events', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+
+    createUnit: async (data) => {
+        return fetchApi('/organizations/units', {
             method: 'POST',
             body: JSON.stringify(data),
         });
@@ -382,6 +397,12 @@ export const usersApi = {
     updateRole: async (id, role) => {
         return fetchApi(`/users/${id}/role?role=${role}`, {
             method: 'PATCH',
+        });
+    },
+
+    delete: async (id) => {
+        return fetchApi(`/users/${id}`, {
+            method: 'DELETE',
         });
     },
 

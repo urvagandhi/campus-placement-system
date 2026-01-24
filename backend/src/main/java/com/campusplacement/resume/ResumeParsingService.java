@@ -13,7 +13,7 @@ import com.campusplacement.ai.AIResultPersistence;
 import com.campusplacement.ai.dto.ResumeParseResponseDTO;
 import com.campusplacement.common.exception.ResourceNotFoundException;
 import com.campusplacement.organizations.OrganizationScopeService;
-import com.campusplacement.organizations.ScopeContext;
+import com.campusplacement.organizations.model.ScopeContext;
 import com.campusplacement.students.StudentProfile;
 import com.campusplacement.students.StudentRepository;
 

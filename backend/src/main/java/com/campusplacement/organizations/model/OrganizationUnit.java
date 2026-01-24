@@ -1,4 +1,4 @@
-package com.campusplacement.organizations;
+package com.campusplacement.organizations.model;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

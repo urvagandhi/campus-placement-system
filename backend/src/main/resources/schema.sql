@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS colleges (
     admin_name          VARCHAR(255),
     contact_phone       VARCHAR(50),
     is_active           BOOLEAN         DEFAULT TRUE,
+    deleted_at          TIMESTAMP,
     created_at          TIMESTAMP       NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMP
 );

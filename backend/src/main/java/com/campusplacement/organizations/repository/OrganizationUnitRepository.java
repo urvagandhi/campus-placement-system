@@ -1,4 +1,4 @@
-package com.campusplacement.organizations;
+package com.campusplacement.organizations.repository;
 
 import java.util.List;
 import java.util.Optional;
@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.campusplacement.common.OrganizationUnitType;
+import com.campusplacement.organizations.model.OrganizationUnit;
 
 /**
  * Repository for OrganizationUnit entity.

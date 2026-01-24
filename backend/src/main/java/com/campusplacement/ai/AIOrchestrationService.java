@@ -18,7 +18,7 @@ import com.campusplacement.ai.dto.RankingResponseDTO;
 import com.campusplacement.ai.dto.ResumeParseRequestDTO;
 import com.campusplacement.ai.dto.ResumeParseResponseDTO;
 import com.campusplacement.organizations.OrganizationScopeService;
-import com.campusplacement.organizations.ScopeContext;
+import com.campusplacement.organizations.model.ScopeContext;
 import com.campusplacement.security.CustomUserDetails;
 
 import io.micrometer.core.instrument.Counter;
@@ -29,16 +29,20 @@ import lombok.RequiredArgsConstructor;
 /**
  * Central orchestration service for all AI operations.
  *
- * <p><strong>Responsibilities:</strong></p>
+ * <p>
+ * <strong>Responsibilities:</strong>
+ * </p>
  * <ul>
- *   <li>Coordinate AI service calls with proper fallbacks</li>
- *   <li>Validate scope before any AI operation</li>
- *   <li>Log all AI interactions for audit</li>
- *   <li>Collect metrics for monitoring</li>
+ * <li>Coordinate AI service calls with proper fallbacks</li>
+ * <li>Validate scope before any AI operation</li>
+ * <li>Log all AI interactions for audit</li>
+ * <li>Collect metrics for monitoring</li>
  * </ul>
  *
- * <p><strong>Design Principle:</strong> Rule-first, AI-second.
- * Business rules are always enforced before AI scoring.</p>
+ * <p>
+ * <strong>Design Principle:</strong> Rule-first, AI-second.
+ * Business rules are always enforced before AI scoring.
+ * </p>
  */
 @Service
 @RequiredArgsConstructor
@@ -57,8 +61,10 @@ public class AIOrchestrationService {
     /**
      * Parses a resume and extracts structured data.
      *
-     * <p><strong>Access Control:</strong> Student can parse own resume only.
-     * Coordinators/Admins cannot parse student resumes directly.</p>
+     * <p>
+     * <strong>Access Control:</strong> Student can parse own resume only.
+     * Coordinators/Admins cannot parse student resumes directly.
+     * </p>
      *
      * @param studentId  ID of the student whose resume is being parsed
      * @param resumeText Raw text content of the resume
@@ -124,10 +130,12 @@ public class AIOrchestrationService {
     /**
      * Ranks eligible students for a drive based on similarity scoring.
      *
-     * <p><strong>Important:</strong> This is RANKING only, not decision-making.
-     * Business eligibility must be checked BEFORE calling this method.</p>
+     * <p>
+     * <strong>Important:</strong> This is RANKING only, not decision-making.
+     * Business eligibility must be checked BEFORE calling this method.
+     * </p>
      *
-     * @param driveId           ID of the placement drive
+     * @param driveId            ID of the placement drive
      * @param eligibleStudentIds List of already-eligible student IDs
      * @return Ranked list with similarity scores and explanations
      */
@@ -192,7 +200,8 @@ public class AIOrchestrationService {
     }
 
     private void validateDriveAccess(Long driveId, ScopeContext scope) {
-        // Drive access validation will be implemented when integrating with DriveService
+        // Drive access validation will be implemented when integrating with
+        // DriveService
         // For now, scope is validated at the service layer
         if (!scope.isSuperAdmin() && scope.collegeId() == null) {
             throw new AccessDeniedException("No college scope for drive access");
@@ -227,7 +236,8 @@ public class AIOrchestrationService {
                 .explanation(AIExplanation.builder()
                         .factors(List.of("AI service unavailable"))
                         .breakdown(Map.of())
-                        .humanReadable("Resume parsing is temporarily unavailable. Please try again later or enter skills manually.")
+                        .humanReadable(
+                                "Resume parsing is temporarily unavailable. Please try again later or enter skills manually.")
                         .build())
                 .build();
     }

@@ -14,8 +14,8 @@ export default function AdminSidebar() {
 
     const menuItems = [
         { name: 'Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
-        { name: 'Manage Users', href: '/dashboard/admin/users', icon: Users },
-        { name: 'Departments', href: '/dashboard/admin/departments', icon: Building2 },
+        { name: 'Staff', href: '/dashboard/admin/users', icon: Users },
+        { name: 'Hierarchy', href: '/dashboard/admin/departments', icon: Building2 },
         { name: 'College Settings', href: '/dashboard/admin/settings', icon: Settings },
     ];
 

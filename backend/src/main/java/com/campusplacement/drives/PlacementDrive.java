@@ -78,7 +78,7 @@ public class PlacementDrive extends BaseEntity {
     @jakarta.persistence.ManyToMany(fetch = FetchType.LAZY)
     @jakarta.persistence.JoinTable(name = "drive_eligible_departments", joinColumns = @JoinColumn(name = "drive_id"), inverseJoinColumns = @JoinColumn(name = "department_id"))
     @Builder.Default
-    private java.util.Set<com.campusplacement.organizations.OrganizationUnit> eligibleDepartments = new java.util.HashSet<>();
+    private java.util.Set<com.campusplacement.organizations.model.OrganizationUnit> eligibleDepartments = new java.util.HashSet<>();
 
     @Column(name = "required_skills")
     private String requiredSkills; // Comma-separated

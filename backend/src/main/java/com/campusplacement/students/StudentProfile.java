@@ -1,7 +1,7 @@
 package com.campusplacement.students;
 
 import com.campusplacement.common.BaseEntity;
-import com.campusplacement.organizations.OrganizationUnit;
+import com.campusplacement.organizations.model.OrganizationUnit;
 import com.campusplacement.users.User;
 
 import jakarta.persistence.Column;

@@ -1,8 +1,9 @@
-package com.campusplacement.organizations;
+package com.campusplacement.organizations.model;
 
 import java.util.Set;
 
 import com.campusplacement.common.UserRole;
+import com.campusplacement.organizations.ScopeContextHolder;
 
 /**
  * Immutable context object containing resolved scope data for a user.

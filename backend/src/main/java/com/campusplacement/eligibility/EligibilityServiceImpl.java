@@ -20,7 +20,7 @@ import com.campusplacement.common.exception.ResourceNotFoundException;
 import com.campusplacement.drives.DriveRepository;
 import com.campusplacement.drives.PlacementDrive;
 import com.campusplacement.eligibility.dto.EligibilityResultDTO;
-import com.campusplacement.organizations.OrganizationUnit;
+import com.campusplacement.organizations.model.OrganizationUnit;
 import com.campusplacement.security.CustomUserDetails;
 import com.campusplacement.students.StudentProfile;
 import com.campusplacement.students.StudentRepository;

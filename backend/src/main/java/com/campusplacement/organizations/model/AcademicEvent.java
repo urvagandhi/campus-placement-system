@@ -1,4 +1,4 @@
-package com.campusplacement.organizations;
+package com.campusplacement.organizations.model;
 
 import java.time.LocalDate;
 
@@ -50,4 +50,7 @@ public class AcademicEvent extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "deleted_at")
+    private java.time.LocalDateTime deletedAt;
 }

@@ -15,10 +15,10 @@ import com.campusplacement.common.OrganizationUnitType;
 import com.campusplacement.common.ScopeLevel;
 import com.campusplacement.common.UserRole;
 import com.campusplacement.common.exception.ResourceNotFoundException;
-import com.campusplacement.organizations.OrganizationUnit;
-import com.campusplacement.organizations.OrganizationUnitRepository;
-import com.campusplacement.organizations.UserAssignment;
-import com.campusplacement.organizations.UserAssignmentRepository;
+import com.campusplacement.organizations.model.OrganizationUnit;
+import com.campusplacement.organizations.model.UserAssignment;
+import com.campusplacement.organizations.repository.OrganizationUnitRepository;
+import com.campusplacement.organizations.repository.UserAssignmentRepository;
 import com.campusplacement.users.User;
 import com.campusplacement.users.UserRepository;
 

@@ -19,7 +19,7 @@ import com.campusplacement.common.exception.ResourceNotFoundException;
 import com.campusplacement.drives.dto.CreateDriveRequestDTO;
 import com.campusplacement.drives.dto.DriveDTO;
 import com.campusplacement.organizations.OrganizationScopeService;
-import com.campusplacement.organizations.ScopeContext;
+import com.campusplacement.organizations.model.ScopeContext;
 import com.campusplacement.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
@@ -46,7 +46,7 @@ public class DriveServiceImpl implements DriveService {
     private final DriveRepository driveRepository;
     private final CollegeRepository collegeRepository;
     private final OrganizationScopeService scopeService;
-    private final com.campusplacement.organizations.OrganizationUnitRepository orgUnitRepository;
+    private final com.campusplacement.organizations.repository.OrganizationUnitRepository orgUnitRepository;
 
     // ==================== Read Operations ====================
 
@@ -156,7 +156,8 @@ public class DriveServiceImpl implements DriveService {
         } else if (scope.collegeId() != null) {
             // CRITICAL: Validate coordinator can only create drives for their college
             if (request.getCollegeId() != null && !request.getCollegeId().equals(scope.collegeId())) {
-                log.warn("SECURITY: User {} attempted to create drive for different college. User college: {}, Requested: {}",
+                log.warn(
+                        "SECURITY: User {} attempted to create drive for different college. User college: {}, Requested: {}",
                         userId, scope.collegeId(), request.getCollegeId());
                 throw new AccessDeniedException("Cannot create drive for a different college");
             }
@@ -180,7 +181,8 @@ public class DriveServiceImpl implements DriveService {
         drive.setMaxBacklogs(request.getMaxBacklogs());
 
         if (request.getEligibleDepartments() != null && !request.getEligibleDepartments().isEmpty()) {
-            java.util.Set<com.campusplacement.organizations.OrganizationUnit> depts = request.getEligibleDepartments()
+            java.util.Set<com.campusplacement.organizations.model.OrganizationUnit> depts = request
+                    .getEligibleDepartments()
                     .stream()
                     .map(deptId -> orgUnitRepository.findById(deptId)
                             .filter(d -> d.getType() == com.campusplacement.common.OrganizationUnitType.DEPARTMENT)
@@ -189,7 +191,7 @@ public class DriveServiceImpl implements DriveService {
                     .collect(Collectors.toSet());
 
             // Validate departments belong to the same college
-            for (com.campusplacement.organizations.OrganizationUnit dept : depts) {
+            for (com.campusplacement.organizations.model.OrganizationUnit dept : depts) {
                 if (dept.getCollege() == null || !dept.getCollege().getId().equals(college.getId())) {
                     throw new IllegalArgumentException(
                             "Department " + dept.getId() + " does not belong to college " + college.getId());
@@ -226,7 +228,8 @@ public class DriveServiceImpl implements DriveService {
         if (!scope.isSuperAdmin()) {
             Long driveCollegeId = drive.getCollege() != null ? drive.getCollege().getId() : null;
             if (!scope.collegeId().equals(driveCollegeId)) {
-                log.warn("SECURITY: User {} attempted to update drive {} from different college. User college: {}, Drive college: {}",
+                log.warn(
+                        "SECURITY: User {} attempted to update drive {} from different college. User college: {}, Drive college: {}",
                         userId, id, scope.collegeId(), driveCollegeId);
                 throw new AccessDeniedException("No access to update this drive");
             }
@@ -252,7 +255,7 @@ public class DriveServiceImpl implements DriveService {
 
         if (driveDTO.getEligibleDepartments() != null) {
             // If caller passes empty set, it means clear all departments
-            java.util.Set<com.campusplacement.organizations.OrganizationUnit> depts = new java.util.HashSet<>();
+            java.util.Set<com.campusplacement.organizations.model.OrganizationUnit> depts = new java.util.HashSet<>();
             if (!driveDTO.getEligibleDepartments().isEmpty()) {
                 depts = driveDTO.getEligibleDepartments().stream()
                         .filter(java.util.Objects::nonNull)
@@ -351,7 +354,7 @@ public class DriveServiceImpl implements DriveService {
                 .maxBacklogs(drive.getMaxBacklogs())
                 .eligibleDepartments(drive.getEligibleDepartments() != null
                         ? drive.getEligibleDepartments().stream()
-                                .map(com.campusplacement.organizations.OrganizationUnit::getId)
+                                .map(com.campusplacement.organizations.model.OrganizationUnit::getId)
                                 .collect(Collectors.toSet())
                         : java.util.Collections.emptySet())
                 .requiredSkills(drive.getRequiredSkills() != null

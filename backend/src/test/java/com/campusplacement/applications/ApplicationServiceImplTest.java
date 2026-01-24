@@ -31,7 +31,7 @@ import com.campusplacement.drives.DriveRepository;
 import com.campusplacement.drives.PlacementDrive;
 import com.campusplacement.eligibility.DriveEligibilityService;
 import com.campusplacement.organizations.OrganizationScopeService;
-import com.campusplacement.organizations.ScopeContext;
+import com.campusplacement.organizations.model.ScopeContext;
 import com.campusplacement.security.CustomUserDetails;
 import com.campusplacement.students.StudentProfile;
 import com.campusplacement.students.StudentRepository;
@@ -138,8 +138,8 @@ class ApplicationServiceImplTest {
         application.setStudentId(differentStudent.getId());
         when(applicationRepository.findById(application.getId())).thenReturn(Optional.of(application));
 
-        assertThrows(org.springframework.security.access.AccessDeniedException.class, () ->
-                applicationService.withdrawApplication(application.getId()));
+        assertThrows(org.springframework.security.access.AccessDeniedException.class,
+                () -> applicationService.withdrawApplication(application.getId()));
     }
 
     @SuppressWarnings("null")
@@ -152,8 +152,8 @@ class ApplicationServiceImplTest {
         when(applicationRepository.findById(application.getId())).thenReturn(Optional.of(application));
         when(driveRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () ->
-                applicationService.updateApplicationStatus(application.getId(), ApplicationStatusType.SHORTLISTED));
+        assertThrows(ResourceNotFoundException.class, () -> applicationService
+                .updateApplicationStatus(application.getId(), ApplicationStatusType.SHORTLISTED));
     }
 
     private Application buildApplication(ApplicationStatusType status, Long driveId) {

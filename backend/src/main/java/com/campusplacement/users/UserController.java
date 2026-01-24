@@ -70,7 +70,10 @@ public class UserController {
 
         boolean isActive = "Active".equalsIgnoreCase(status);
         user.setIsActive(isActive);
-        user = userRepository.save(user);
+        userRepository.save(user);
+
+        // Re-fetch with college to avoid LazyInitializationException
+        user = userRepository.findByIdWithCollege(id).orElse(user);
 
         return ResponseEntity.ok(ApiResponse.success(mapToDTO(user)));
     }
@@ -92,11 +95,36 @@ public class UserController {
         try {
             UserRole newRole = UserRole.valueOf(role.toUpperCase());
             user.setRole(newRole);
-            user = userRepository.save(user);
+            userRepository.save(user);
+
+            // Re-fetch with college to avoid LazyInitializationException
+            user = userRepository.findByIdWithCollege(id).orElse(user);
             return ResponseEntity.ok(ApiResponse.success(mapToDTO(user)));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid role: " + role);
         }
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
+        Long collegeId = scopeService.getCurrentUserScope().collegeId();
+        Long currentUserId = scopeService.getCurrentUserScope().userId();
+
+        // Prevent self-deletion
+        if (id.equals(currentUserId)) {
+            throw new IllegalArgumentException("You cannot delete your own account");
+        }
+
+        User user = userRepository.findByIdWithCollege(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!user.getCollege().getId().equals(collegeId)) {
+            throw new UnauthorizedException("Cannot access user from another college");
+        }
+
+        userRepository.delete(user);
+        return ResponseEntity.ok(ApiResponse.success(null, "Staff member removed successfully"));
     }
 
     private UserDTO mapToDTO(User user) {

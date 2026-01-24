@@ -22,7 +22,7 @@ import com.campusplacement.drives.PlacementDrive;
 import com.campusplacement.insights.dto.AggregatedInsight;
 import com.campusplacement.insights.dto.SkillTrendInsight;
 import com.campusplacement.organizations.OrganizationScopeService;
-import com.campusplacement.organizations.ScopeContext;
+import com.campusplacement.organizations.model.ScopeContext;
 import com.campusplacement.security.CustomUserDetails;
 import com.campusplacement.students.StudentProfile;
 import com.campusplacement.students.StudentRepository;

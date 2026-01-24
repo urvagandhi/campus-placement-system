@@ -1,9 +1,9 @@
 package com.campusplacement.organizations.dto;
 
-import java.util.List;
-
 import com.campusplacement.common.OrganizationUnitType;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,16 +13,16 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrganizationUnitDTO {
-    private Long id;
+public class CreateOrganizationUnitDTO {
+
+    @NotBlank(message = "Name is required")
     private String name;
+
+    @NotBlank(message = "Code is required")
     private String code;
+
+    @NotNull(message = "Type is required")
     private OrganizationUnitType type;
-    private Long parentId;
-    private Boolean isActive;
-    // For Department stats
-    private Integer studentCount;
-    private Integer placementCount;
-    // For hierarchical structure
-    private List<OrganizationUnitDTO> children;
+
+    private Long parentUnitId;
 }

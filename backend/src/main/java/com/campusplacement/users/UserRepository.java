@@ -100,7 +100,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
          * @param pageable  Pagination parameters
          * @return Page of users in the college
          */
-        Page<User> findByCollegeId(Long collegeId, Pageable pageable);
+        /**
+         * Finds all users in a specific college with pagination.
+         * Used by ADMIN to view users within their college.
+         * Eagerly fetches college to avoid LazyInitializationException.
+         *
+         * @param collegeId College ID for scope filtering
+         * @param pageable  Pagination parameters
+         * @return Page of users in the college
+         */
+        @Query(value = "SELECT u FROM User u LEFT JOIN FETCH u.college WHERE u.college.id = :collegeId", countQuery = "SELECT COUNT(u) FROM User u WHERE u.college.id = :collegeId")
+        Page<User> findByCollegeId(@Param("collegeId") Long collegeId, Pageable pageable);
 
         /**
          * Finds active users in a college with pagination.
@@ -130,9 +140,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
          * @param pageable  Pagination parameters
          * @return Page of matching users
          */
-        @Query("SELECT u FROM User u WHERE u.college.id = :collegeId " +
+        @Query(value = "SELECT u FROM User u LEFT JOIN FETCH u.college WHERE u.college.id = :collegeId " +
                         "AND (LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
-                        "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))")
+                        "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))", countQuery = "SELECT COUNT(u) FROM User u WHERE u.college.id = :collegeId "
+                                        +
+                                        "AND (LOWER(u.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                                        "OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))")
         Page<User> searchByCollegeId(
                         @Param("collegeId") Long collegeId,
                         @Param("search") String search,

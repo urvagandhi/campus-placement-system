@@ -10,7 +10,7 @@ import org.hibernate.annotations.SQLRestriction;
 import com.campusplacement.colleges.College;
 import com.campusplacement.common.BaseEntity;
 import com.campusplacement.common.UserRole;
-import com.campusplacement.organizations.UserAssignment;
+import com.campusplacement.organizations.model.UserAssignment;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

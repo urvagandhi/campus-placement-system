@@ -17,6 +17,10 @@ import com.campusplacement.common.ApiResponse;
 import com.campusplacement.common.exception.ResourceNotFoundException;
 import com.campusplacement.organizations.dto.AcademicEventDTO;
 import com.campusplacement.organizations.dto.OrganizationUnitDTO;
+import com.campusplacement.organizations.model.AcademicEvent;
+import com.campusplacement.organizations.model.OrganizationUnit;
+import com.campusplacement.organizations.repository.AcademicEventRepository;
+import com.campusplacement.organizations.repository.OrganizationUnitRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,6 +34,7 @@ public class OrganizationController {
         private final com.campusplacement.students.StudentRepository studentRepository;
         private final com.campusplacement.applications.ApplicationRepository applicationRepository;
         private final OrganizationScopeService scopeService;
+        private final OrganizationService organizationService; // Inject new service
 
         @GetMapping("/departments")
         @PreAuthorize("hasAnyRole('ADMIN', 'COORDINATOR', 'SUPER_ADMIN')")
@@ -58,6 +63,49 @@ public class OrganizationController {
                                 })
                                 .collect(Collectors.toList());
                 return ResponseEntity.ok(ApiResponse.success(dtos));
+        }
+
+        @GetMapping("/institutes")
+        @PreAuthorize("hasAnyRole('ADMIN', 'COORDINATOR')")
+        public ResponseEntity<ApiResponse<List<OrganizationUnitDTO>>> getInstitutes() {
+                Long collegeId = scopeService.getCurrentUserScope().collegeId();
+                List<OrganizationUnitDTO> dtos = organizationUnitRepository
+                                .findByCollegeIdAndType(collegeId,
+                                                com.campusplacement.common.OrganizationUnitType.INSTITUTE)
+                                .stream()
+                                .map(unit -> OrganizationUnitDTO.builder()
+                                                .id(unit.getId())
+                                                .name(unit.getName())
+                                                .code(unit.getCode())
+                                                .type(unit.getType())
+                                                .parentId(unit.getParent() != null ? unit.getParent().getId() : null)
+                                                .isActive(unit.getIsActive())
+                                                .build())
+                                .collect(Collectors.toList());
+                return ResponseEntity.ok(ApiResponse.success(dtos));
+        }
+
+        /**
+         * Get the complete organizational hierarchy for the current user's college.
+         * Returns a nested tree structure: University -> Institutes -> Departments
+         * with student and placement counts at the department level.
+         */
+        @GetMapping("/hierarchy")
+        @PreAuthorize("hasAnyRole('ADMIN', 'COORDINATOR')")
+        public ResponseEntity<ApiResponse<OrganizationUnitDTO>> getHierarchy() {
+                OrganizationUnitDTO hierarchy = organizationService.getHierarchy();
+                return ResponseEntity.ok(ApiResponse.success(hierarchy));
+        }
+
+        /**
+         * Create a new Organization Unit (Department/Institute).
+         */
+        @PostMapping("/units")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<ApiResponse<OrganizationUnitDTO>> createOrganizationUnit(
+                        @RequestBody @jakarta.validation.Valid com.campusplacement.organizations.dto.CreateOrganizationUnitDTO request) {
+                OrganizationUnitDTO created = organizationService.createOrganizationUnit(request);
+                return ResponseEntity.ok(ApiResponse.success(created, "Department created successfully"));
         }
 
         @GetMapping("/events")

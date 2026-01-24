@@ -5,6 +5,8 @@ import java.util.Optional;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
 
+import com.campusplacement.organizations.model.ScopeContext;
+
 /**
  * Request-scoped cache for {@link ScopeContext}.
  *
