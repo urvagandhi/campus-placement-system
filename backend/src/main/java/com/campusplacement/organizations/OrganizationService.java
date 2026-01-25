@@ -12,4 +12,6 @@ public interface OrganizationService {
      * with student and placement counts at the department level.
      */
     OrganizationUnitDTO getHierarchy();
+
+    void deleteOrganizationUnit(Long id);
 }

@@ -1,9 +1,7 @@
 package com.campusplacement.users;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 
     private final UserRepository userRepository;
+    private final UserService userService;
     private final OrganizationScopeService scopeService;
 
     @GetMapping
@@ -38,20 +37,13 @@ public class UserController {
             @RequestParam(required = false) String search,
             @PageableDefault(size = 100) Pageable pageable) {
 
-        Long collegeId = scopeService.getCurrentUserScope().collegeId();
-
-        Page<User> usersPage;
-        if (search != null && !search.isEmpty()) {
-            usersPage = userRepository.searchByCollegeId(collegeId, search, pageable);
-        } else {
-            usersPage = userRepository.findByCollegeId(collegeId, pageable);
-        }
-
-        List<UserDTO> userDTOs = usersPage.getContent().stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(ApiResponse.success(userDTOs));
+        // Use service to handle transaction and lazy loading
+        // Note: UserService returns PagedResponse, but for now we maintain API contract
+        // returning List wrapped in ApiResponse
+        // ideally we should return PagedResponse, but to minimize breaking changes we
+        // extract content
+        var pagedUsers = userService.getAllUsersPaginated(pageable, search, null);
+        return ResponseEntity.ok(ApiResponse.success(pagedUsers.getContent()));
     }
 
     @PatchMapping("/{id}/status")
@@ -61,11 +53,27 @@ public class UserController {
             @RequestParam String status) {
 
         Long collegeId = scopeService.getCurrentUserScope().collegeId();
+        Long currentUserId = scopeService.getCurrentUserScope().userId();
+
+        // Prevent self-deactivation
+        if (id.equals(currentUserId)) {
+            throw new IllegalArgumentException("You cannot change your own status");
+        }
+
         User user = userRepository.findByIdWithCollege(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (!user.getCollege().getId().equals(collegeId)) {
             throw new UnauthorizedException("Cannot access user from another college");
+        }
+
+        // Check for superior role modification
+        @SuppressWarnings("null")
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
+
+        if (user.getRole().ordinal() > currentUser.getRole().ordinal()) {
+            throw new UnauthorizedException("Cannot modify a superior account");
         }
 
         boolean isActive = "Active".equalsIgnoreCase(status);
@@ -121,6 +129,15 @@ public class UserController {
 
         if (!user.getCollege().getId().equals(collegeId)) {
             throw new UnauthorizedException("Cannot access user from another college");
+        }
+
+        // Check for superior role modification
+        @SuppressWarnings("null")
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Current user not found"));
+
+        if (user.getRole().ordinal() > currentUser.getRole().ordinal()) {
+            throw new UnauthorizedException("Cannot delete a superior account");
         }
 
         userRepository.delete(user);

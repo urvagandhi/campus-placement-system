@@ -3,8 +3,8 @@
 import {
     Building2,
     LayoutDashboard,
-    Users,
-    Settings
+    Settings,
+    Briefcase
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -14,8 +14,8 @@ export default function AdminSidebar() {
 
     const menuItems = [
         { name: 'Dashboard', href: '/dashboard/admin', icon: LayoutDashboard },
-        { name: 'Staff', href: '/dashboard/admin/users', icon: Users },
-        { name: 'Hierarchy', href: '/dashboard/admin/departments', icon: Building2 },
+        { name: 'Organization', href: '/dashboard/admin/organization', icon: Building2 },
+        { name: 'Company Database', href: '#', icon: Briefcase, disabled: true, label: 'Coming Soon' }, // TODO: Implement Company Database
         { name: 'College Settings', href: '/dashboard/admin/settings', icon: Settings },
     ];
 
@@ -33,13 +33,20 @@ export default function AdminSidebar() {
                             <Link
                                 key={item.name}
                                 href={item.href}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${active
-                                    ? 'bg-indigo-50/80 text-indigo-700 shadow-sm ring-1 ring-indigo-100'
-                                    : 'text-gray-600 hover:bg-gray-50/80 hover:text-gray-900'
+                                aria-disabled={item.disabled}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                                    item.disabled 
+                                        ? 'text-gray-400 cursor-not-allowed pointer-events-none opacity-60' 
+                                        : active
+                                            ? 'bg-indigo-50/80 text-indigo-700 shadow-sm ring-1 ring-indigo-100'
+                                            : 'text-gray-600 hover:bg-gray-50/80 hover:text-gray-900'
                                     }`}
                             >
                                 <Icon className={`h-5 w-5 ${active ? 'text-indigo-600' : 'text-gray-400'}`} />
-                                {item.name}
+                                <div className="flex flex-col">
+                                    <span>{item.name}</span>
+                                    {item.label && <span className="text-[10px] uppercase font-bold text-amber-500 tracking-wider">({item.label})</span>}
+                                </div>
                             </Link>
                         );
                     })}

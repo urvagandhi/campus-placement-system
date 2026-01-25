@@ -3,7 +3,7 @@
 import Logo from '@/components/ui/Logo';
 import UserProfileDropdown from '@/components/ui/UserProfileDropdown';
 import { useAuth } from '@/hooks/useAuth';
-import { Bell, LogOut, Search } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 
 export default function AdminNavbar() {
     const { user, logout } = useAuth();
@@ -34,27 +34,8 @@ export default function AdminNavbar() {
                         </div>
                     </div>
 
-                    {/* Search Bar - Center */}
-                    <div className="hidden md:flex flex-1 max-w-lg mx-8">
-                        <div className="relative w-full">
-                            <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search users, departments..."
-                                className="w-full pl-10 pr-4 py-2 bg-gray-50/50 border border-gray-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-100 text-sm text-gray-700 transition-all backdrop-blur-sm"
-                            />
-                        </div>
-                    </div>
-
                     {/* Right Side Actions */}
                     <div className="flex items-center gap-2 sm:gap-4">
-                        <button className="relative p-2.5 text-gray-500 hover:text-indigo-600 transition-colors rounded-xl hover:bg-gray-100/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
-                            <Bell className="h-5 w-5" />
-                            <span className="absolute top-2.5 right-2.5 h-2 w-2 bg-red-500 rounded-full border-2 border-white shadow-sm"></span>
-                        </button>
-
-                        <div className="h-8 w-px bg-gray-200/50 mx-1 hidden sm:block"></div>
-
                         <div className="flex items-center gap-3 pl-2 sm:pl-0">
                             <div className="hidden sm:block text-right">
                                 <p className="text-sm font-semibold text-gray-900 leading-none">{user?.name || 'College Admin'}</p>

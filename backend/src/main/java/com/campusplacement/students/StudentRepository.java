@@ -155,9 +155,9 @@ public interface StudentRepository extends JpaRepository<StudentProfile, Long> {
         * Count students in allowed departments within a college.
         * Useful for analytics and dashboard metrics.
         */
-       @Query("SELECT COUNT(sp) FROM StudentProfile sp " +
+       @Query("SELECT COUNT(sp) FROM StudentProfile sp JOIN sp.user u " +
                      "WHERE sp.department.id IN :departmentIds " +
-                     "AND sp.user.college.id = :collegeId")
+                     "AND u.college.id = :collegeId AND u.deletedAt IS NULL")
        Long countByDepartmentIdInAndCollegeId(
                      @Param("departmentIds") java.util.Set<Long> departmentIds,
                      @Param("collegeId") Long collegeId);
@@ -242,4 +242,28 @@ public interface StudentRepository extends JpaRepository<StudentProfile, Long> {
                      @Param("departmentIds") java.util.Set<Long> departmentIds,
                      @Param("collegeId") Long collegeId,
                      Pageable pageable);
+
+       // ==================== Institute-Level Queries ====================
+
+       /**
+        * Count students in an institute (all departments under the institute).
+        * Used for institute-level analytics.
+        */
+       @Query("SELECT COUNT(sp) FROM StudentProfile sp " +
+                     "WHERE sp.department.parent.id = :instituteId")
+       Long countByInstituteId(@Param("instituteId") Long instituteId);
+
+       /**
+        * Find all students in an institute.
+        */
+       @Query("SELECT sp FROM StudentProfile sp " +
+                     "WHERE sp.department.parent.id = :instituteId")
+       List<StudentProfile> findByInstituteId(@Param("instituteId") Long instituteId);
+
+       /**
+        * Count students in a department.
+        */
+       @Query("SELECT COUNT(sp) FROM StudentProfile sp " +
+                     "WHERE sp.department.id = :departmentId")
+       Long countByDepartmentId(@Param("departmentId") Long departmentId);
 }

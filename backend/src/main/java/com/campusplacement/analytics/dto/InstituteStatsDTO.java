@@ -1,39 +1,43 @@
 package com.campusplacement.analytics.dto;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO for department-wise statistics.
+ * DTO for institute-level placement statistics.
  * 
  * <p>
- * Includes reference to parent institute for hierarchical display.
+ * Used when returning hierarchical analytics data with institute and department
+ * breakdown.
  * </p>
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DepartmentStatsDTO {
+public class InstituteStatsDTO {
 
-    private Long departmentId;
-    private String departmentName;
-    private String departmentCode;
-
-    // Parent institute reference
     private Long instituteId;
     private String instituteName;
+    private String instituteCode;
 
-    // Core statistics
     private Long totalStudents;
     private Long placedStudents;
     private Double placementRate;
+
     private Double averagePackage;
     private Double highestPackage;
 
-    // Additional statistics
-    private Long totalApplications;
     private Long totalDrives;
+    private Long activeDrives;
+    private Long totalApplications;
+
+    /**
+     * Department-wise breakdown for this institute.
+     */
+    private List<DepartmentStatsDTO> departmentStats;
 }

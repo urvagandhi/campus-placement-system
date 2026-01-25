@@ -44,7 +44,6 @@ public class CookieUtils {
      * @return the ResponseCookie
      */
     public ResponseCookie createAccessTokenCookie(String token, long maxAgeSec) {
-        @SuppressWarnings("null")
         ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(ACCESS_TOKEN_COOKIE, token)
                 .httpOnly(true)
                 .secure(secureCookie)
@@ -68,7 +67,6 @@ public class CookieUtils {
      * @return the ResponseCookie
      */
     public ResponseCookie createRefreshTokenCookie(String token, long maxAgeSec) {
-        @SuppressWarnings("null")
         ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(REFRESH_TOKEN_COOKIE, token)
                 .httpOnly(true)
                 .secure(secureCookie)

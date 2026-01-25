@@ -60,4 +60,23 @@ public interface UserAssignmentRepository extends JpaRepository<UserAssignment, 
          * Check if user has assignment in org unit.
          */
         boolean existsByUserIdAndOrganizationUnitId(Long userId, Long organizationUnitId);
+
+        /**
+         * Find all assignments for a college (Staff only).
+         */
+        @Query("SELECT ua FROM UserAssignment ua JOIN FETCH ua.user u JOIN FETCH ua.organizationUnit ou " +
+                        "WHERE ou.college.id = :collegeId AND u.role != 'STUDENT' AND u.deletedAt IS NULL")
+        List<UserAssignment> findAllStaffByCollegeId(@Param("collegeId") Long collegeId);
+
+        /**
+         * Count active staff (non-students, not deleted) in a unit.
+         */
+        @Query("SELECT COUNT(ua) FROM UserAssignment ua JOIN ua.user u " +
+                        "WHERE ua.organizationUnit.id = :orgUnitId AND u.role != 'STUDENT' AND u.deletedAt IS NULL")
+        long countActiveStaffByUnitId(@Param("orgUnitId") Long orgUnitId);
+
+        /**
+         * Find all assignments for a list of organization unit IDs.
+         */
+        List<UserAssignment> findAllByOrganizationUnitIdIn(List<Long> organizationUnitIds);
 }

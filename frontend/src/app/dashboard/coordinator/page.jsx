@@ -7,6 +7,10 @@ import { Activity, ArrowRight, Briefcase, Calendar, Plus, UserCheck, Users } fro
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
+import Button from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
+import Input from '@/components/ui/Input';
+import api from '@/services/api';
 
 export default function CoordinatorDashboard() {
     const [loading, setLoading] = useState(true);
@@ -17,28 +21,32 @@ export default function CoordinatorDashboard() {
         shortlisted: 0
     });
     const [recentDrives, setRecentDrives] = useState([]);
+    const [events, setEvents] = useState([]);
+    const [showEventModal, setShowEventModal] = useState(false);
+    const [departments, setDepartments] = useState([]);
+    
+    // Form State for New Event
+    const [newEvent, setNewEvent] = useState({
+        name: '',
+        eventType: 'EXAM',
+        startDate: '',
+        endDate: '',
+        description: '',
+        organizationUnitId: ''
+    });
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const [analyticsResponse, drivesResponse] = await Promise.all([
-                    analyticsApi.getOverview().catch(err => {
-                        console.error("Failed to fetch analytics:", err);
-                        // Return default structure if failed
-                        return { data: { totalDrives: 0, activeDrives: 0, totalApplications: 0, shortlistedCount: 0 } };
-                    }),
-                    drivesApi.getAll().catch(err => {
-                        console.error("Failed to fetch drives:", err);
-                        return { data: { content: [] } };
-                    })
+                const [analyticsResponse, drivesResponse, eventsResponse, hierarchyResponse] = await Promise.all([
+                    analyticsApi.getOverview().catch(err => ({ data: {} })),
+                    drivesApi.getAll().catch(err => ({ data: { content: [] } })),
+                    api.coordinator.getEvents().catch(err => ({ data: [] })),
+                    api.organizations.getHierarchy().catch(err => ({ data: null }))
                 ]);
 
-                // Update stats from analytics response
-                // Assuming analytics API returns { totalDrives, activeDrives, totalApplications, shortlistedCount }
-                // Adjust property names based on actual API response
+                // Update stats
                 const analytics = analyticsResponse.data || {};
-                
-                // If analytics endpoint is not fully ready, we can compute from drives too, but prefer analytics API
                 setStats({
                     totalDrives: analytics.totalDrives || 0,
                     activeDrives: analytics.activeDrives || 0,
@@ -47,10 +55,16 @@ export default function CoordinatorDashboard() {
                 });
 
                 // Recent drives
-                // drivesResponse.data could be a Page object or List, check your API
-                // Assuming Page object: { content: [...] }
                 const drivesList = drivesResponse.data?.content || (Array.isArray(drivesResponse.data) ? drivesResponse.data : []) || [];
                 setRecentDrives(drivesList);
+
+                // Events
+                setEvents(eventsResponse.data || []);
+
+                // Departments from Hierarchy
+                if (hierarchyResponse.data) {
+                    setDepartments(getDepartmentsFromHierarchy(hierarchyResponse.data));
+                }
 
             } catch (error) {
                 console.error("Dashboard data fetch error:", error);
@@ -63,12 +77,54 @@ export default function CoordinatorDashboard() {
         fetchDashboardData();
     }, []);
 
+    const getDepartmentsFromHierarchy = (node) => {
+        if (!node) return [];
+        let depts = [];
+        if (node.type === 'DEPARTMENT') {
+            depts.push({ id: node.id, name: node.name });
+        }
+        if (node.children) {
+            node.children.forEach(child => {
+                depts = [...depts, ...getDepartmentsFromHierarchy(child)];
+            });
+        }
+        return depts;
+    };
+
+    const handleCreateEvent = async (e) => {
+        e.preventDefault();
+        try {
+            const payload = {
+                ...newEvent,
+                organizationUnitId: parseInt(newEvent.organizationUnitId)
+            };
+            const response = await api.coordinator.createEvent(payload);
+            if (response.success) {
+                toast.success('Academic event scheduled');
+                setEvents(prev => [...prev, response.data]);
+                setShowEventModal(false);
+                setNewEvent({ name: '', eventType: 'EXAM', startDate: '', endDate: '', description: '', organizationUnitId: '' });
+            } else {
+                toast.error(response.message || 'Failed to schedule event');
+            }
+        } catch (error) {
+            console.error('Create event error:', error);
+            toast.error(error.message || 'Failed to schedule event');
+        }
+    };
+
     const statItems = [
         { label: 'Total Drives', value: stats.totalDrives, icon: Briefcase, color: 'bg-blue-100/50 text-blue-600' },
         { label: 'Active Drives', value: stats.activeDrives, icon: Activity, color: 'bg-emerald-100/50 text-emerald-600' },
         { label: 'Total Applicants', value: stats.totalApplicants, icon: Users, color: 'bg-purple-100/50 text-purple-600' },
         { label: 'Shortlisted', value: stats.shortlisted, icon: UserCheck, color: 'bg-indigo-100/50 text-indigo-600' },
     ];
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
 
     return (
         <div className="space-y-8 animate-fade-in">
@@ -216,6 +272,137 @@ export default function CoordinatorDashboard() {
                     </Card>
                 </div>
             </div>
+            
+            {/* Academic Calendar Section */}
+            <div>
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900">Academic Calendar</h2>
+                        <p className="text-gray-500 text-sm mt-1">Manage exam schedules to prevent placement conflicts</p>
+                    </div>
+                    <Button size="sm" onClick={() => setShowEventModal(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Event
+                    </Button>
+                </div>
+
+                {loading ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
+                        {[1, 2, 3].map((i) => (
+                             <div key={i} className="h-32 bg-gray-100 rounded-xl" />
+                        ))}
+                    </div>
+                ) : events.length === 0 ? (
+                    <div className="relative overflow-hidden rounded-2xl border border-dashed border-gray-200 bg-gradient-to-b from-gray-50/50 to-white/50 p-12 text-center">
+                        <Calendar className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                        <h3 className="text-lg font-semibold text-gray-900">No Events Scheduled</h3>
+                        <p className="text-gray-500 text-sm mt-1 max-w-sm mx-auto">
+                            Add exam dates and academic events to prevent scheduling conflicts with placement drives.
+                        </p>
+                        <Button size="sm" className="mt-4" onClick={() => setShowEventModal(true)}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Schedule First Event
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[...events].sort((a, b) => new Date(a.startDate) - new Date(b.startDate)).map((event) => {
+                             const typeConfig = {
+                                EXAM: { bg: 'bg-red-50', border: 'border-red-100', text: 'text-red-700', icon: 'bg-red-100' },
+                                HOLIDAY: { bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-700', icon: 'bg-amber-100' },
+                                EVENT: { bg: 'bg-blue-50', border: 'border-blue-100', text: 'text-blue-700', icon: 'bg-blue-100' }
+                            }[event.eventType] || { bg: 'bg-gray-50', border: 'border-gray-100', text: 'text-gray-700', icon: 'bg-gray-100' };
+
+                            return (
+                                <div 
+                                    key={event.id} 
+                                    className={`relative overflow-hidden rounded-xl border ${typeConfig.border} ${typeConfig.bg} p-5 transition-all hover:shadow-md`}
+                                >
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${typeConfig.icon} ${typeConfig.text}`}>
+                                            {event.eventType}
+                                        </span>
+                                    </div>
+                                    <h4 className="font-bold text-gray-900 text-lg mb-1">{event.name}</h4>
+                                    <p className="text-sm text-gray-500 mb-3">{event.organizationUnitName}</p>
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Calendar className="w-4 h-4 text-gray-400" />
+                                        <span className="font-medium text-gray-700">
+                                            {formatDate(event.startDate)} — {formatDate(event.endDate)}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            {/* Add Event Modal */}
+            <Modal
+                isOpen={showEventModal}
+                onClose={() => setShowEventModal(false)}
+                title="Schedule Academic Event"
+            >
+                <form onSubmit={handleCreateEvent} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                        <select
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            value={newEvent.organizationUnitId}
+                            onChange={(e) => setNewEvent({ ...newEvent, organizationUnitId: e.target.value })}
+                            required
+                        >
+                            <option value="">Select Department</option>
+                            {departments.map(dept => (
+                                <option key={dept.id} value={dept.id}>{dept.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <Input
+                        label="Event Name"
+                        value={newEvent.name}
+                        onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })}
+                        placeholder="e.g. End Semester Exams"
+                        required
+                    />
+
+                    <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
+                         <select
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            value={newEvent.eventType}
+                            onChange={(e) => setNewEvent({ ...newEvent, eventType: e.target.value })}
+                        >
+                            <option value="EXAM">Exam</option>
+                            <option value="HOLIDAY">Holiday</option>
+                            <option value="EVENT">Other Event</option>
+                        </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <Input
+                            type="date"
+                            label="Start Date"
+                            value={newEvent.startDate}
+                            onChange={(e) => setNewEvent({ ...newEvent, startDate: e.target.value })}
+                            required
+                        />
+                         <Input
+                            type="date"
+                            label="End Date"
+                            value={newEvent.endDate}
+                            onChange={(e) => setNewEvent({ ...newEvent, endDate: e.target.value })}
+                            required
+                        />
+                    </div>
+
+                    <Button type="submit" className="w-full">
+                        Schedule Event
+                    </Button>
+                </form>
+            </Modal>
         </div>
     );
 }

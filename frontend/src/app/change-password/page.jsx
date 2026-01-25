@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -10,16 +10,11 @@ import Input from '@/components/ui/Input';
 import { validatePassword, passwordsMatch, getPasswordRequirements } from '@/utils/passwordPolicy';
 
 /**
- * Change Password Page
+ * Change Password Content
  * 
- * Used for:
- * 1. First-login password change (when admin logs in with temporary password)
- * 2. General password change from user settings
- * 
- * Query params:
- * - token: First-login token (required for first-login flow)
+ * Contains the actual logic for password change
  */
-export default function ChangePasswordPage() {
+function ChangePasswordContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
@@ -228,5 +223,29 @@ export default function ChangePasswordPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+/**
+ * Change Password Page
+ * 
+ * Used for:
+ * 1. First-login password change (when admin logs in with temporary password)
+ * 2. General password change from user settings
+ * 
+ * Query params:
+ * - token: First-login token (required for first-login flow)
+ */
+export default function ChangePasswordPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+                <div className="w-full max-w-md h-96 bg-white rounded-2xl shadow-xl flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+                </div>
+            </div>
+        }>
+            <ChangePasswordContent />
+        </Suspense>
     );
 }

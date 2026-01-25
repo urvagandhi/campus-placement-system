@@ -12,6 +12,9 @@ import com.campusplacement.common.BaseEntity;
 import com.campusplacement.common.UserRole;
 import com.campusplacement.organizations.model.UserAssignment;
 
+import com.campusplacement.auth.RefreshToken;
+import com.campusplacement.students.StudentProfile;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -149,6 +152,22 @@ public class User extends BaseEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<UserAssignment> assignments = new ArrayList<>();
+
+    /**
+     * User's refresh tokens.
+     * Tokens are automatically deleted when the user is deleted.
+     */
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<RefreshToken> refreshTokens = new ArrayList<>();
+
+    /**
+     * Student profile associated with this user.
+     * Only exists if the user has the STUDENT role.
+     * Automatically deleted when the user is deleted.
+     */
+    @jakarta.persistence.OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private StudentProfile studentProfile;
 
     /**
      * Gets the primary assignment for this user.

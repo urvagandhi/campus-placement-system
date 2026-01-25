@@ -110,4 +110,92 @@ public interface DriveRepository extends JpaRepository<PlacementDrive, Long> {
          */
         List<PlacementDrive> findDistinctByEligibleDepartments_IdInAndCollegeId(
                         java.util.Set<Long> departmentIds, Long collegeId);
+
+        // ==================== Academic Year Queries ====================
+
+        /**
+         * Count drives within a college in an academic year date range.
+         */
+        @Query("SELECT COUNT(d) FROM PlacementDrive d " +
+                        "WHERE d.college.id = :collegeId " +
+                        "AND d.driveDate >= :startDate AND d.driveDate < :endDate")
+        Long countByCollegeIdAndDateRange(
+                        @Param("collegeId") Long collegeId,
+                        @Param("startDate") java.time.LocalDate startDate,
+                        @Param("endDate") java.time.LocalDate endDate);
+
+        /**
+         * Count active drives within a college in an academic year date range.
+         */
+        @Query("SELECT COUNT(d) FROM PlacementDrive d " +
+                        "WHERE d.college.id = :collegeId " +
+                        "AND d.status IN ('OPEN', 'UPCOMING') " +
+                        "AND d.driveDate >= :startDate AND d.driveDate < :endDate")
+        Long countActiveByCollegeIdAndDateRange(
+                        @Param("collegeId") Long collegeId,
+                        @Param("startDate") java.time.LocalDate startDate,
+                        @Param("endDate") java.time.LocalDate endDate);
+
+        /**
+         * Find drives in a college within an academic year date range.
+         */
+        @Query("SELECT d FROM PlacementDrive d " +
+                        "WHERE d.college.id = :collegeId " +
+                        "AND d.driveDate >= :startDate AND d.driveDate < :endDate")
+        List<PlacementDrive> findByCollegeIdAndDateRange(
+                        @Param("collegeId") Long collegeId,
+                        @Param("startDate") java.time.LocalDate startDate,
+                        @Param("endDate") java.time.LocalDate endDate);
+
+        // ==================== Institute-Level Queries ====================
+
+        /**
+         * Count drives eligible for departments under an institute within date range.
+         */
+        @Query("SELECT COUNT(DISTINCT d) FROM PlacementDrive d " +
+                        "JOIN d.eligibleDepartments dept " +
+                        "WHERE dept.parent.id = :instituteId " +
+                        "AND d.driveDate >= :startDate AND d.driveDate < :endDate")
+        Long countByInstituteIdAndDateRange(
+                        @Param("instituteId") Long instituteId,
+                        @Param("startDate") java.time.LocalDate startDate,
+                        @Param("endDate") java.time.LocalDate endDate);
+
+        /**
+         * Count active drives for an institute within date range.
+         */
+        @Query("SELECT COUNT(DISTINCT d) FROM PlacementDrive d " +
+                        "JOIN d.eligibleDepartments dept " +
+                        "WHERE dept.parent.id = :instituteId " +
+                        "AND d.status IN ('OPEN', 'UPCOMING') " +
+                        "AND d.driveDate >= :startDate AND d.driveDate < :endDate")
+        Long countActiveByInstituteIdAndDateRange(
+                        @Param("instituteId") Long instituteId,
+                        @Param("startDate") java.time.LocalDate startDate,
+                        @Param("endDate") java.time.LocalDate endDate);
+
+        /**
+         * Count drives for a department within date range.
+         */
+        @Query("SELECT COUNT(DISTINCT d) FROM PlacementDrive d " +
+                        "JOIN d.eligibleDepartments dept " +
+                        "WHERE dept.id = :departmentId " +
+                        "AND d.driveDate >= :startDate AND d.driveDate < :endDate")
+        Long countByDepartmentIdAndDateRange(
+                        @Param("departmentId") Long departmentId,
+                        @Param("startDate") java.time.LocalDate startDate,
+                        @Param("endDate") java.time.LocalDate endDate);
+
+        /**
+         * Count active drives for a department within date range.
+         */
+        @Query("SELECT COUNT(DISTINCT d) FROM PlacementDrive d " +
+                        "JOIN d.eligibleDepartments dept " +
+                        "WHERE dept.id = :departmentId " +
+                        "AND d.status IN ('OPEN', 'UPCOMING') " +
+                        "AND d.driveDate >= :startDate AND d.driveDate < :endDate")
+        Long countActiveByDepartmentIdAndDateRange(
+                        @Param("departmentId") Long departmentId,
+                        @Param("startDate") java.time.LocalDate startDate,
+                        @Param("endDate") java.time.LocalDate endDate);
 }

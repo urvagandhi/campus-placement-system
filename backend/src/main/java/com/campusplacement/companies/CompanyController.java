@@ -48,8 +48,12 @@ public class CompanyController {
     @GetMapping
     public ResponseEntity<ApiResponse<PagedResponse<CompanyDTO>>> getAllCompanies(
             @PageableDefault(size = 20, sort = "name") Pageable pageable) {
-        PagedResponse<CompanyDTO> companies = companyService.getAllCompanies(pageable);
-        return ResponseEntity.ok(ApiResponse.success(companies));
+        // TODO: Implement Company Database fully with scoped access
+        throw new UnsupportedOperationException(
+                "Company Database feature is currently under development (Coming Soon)");
+        // PagedResponse<CompanyDTO> companies =
+        // companyService.getAllCompanies(pageable);
+        // return ResponseEntity.ok(ApiResponse.success(companies));
     }
 
     /**

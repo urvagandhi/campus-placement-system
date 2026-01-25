@@ -151,4 +151,80 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
                         "ORDER BY COUNT(a.id) DESC " +
                         "LIMIT :limit", nativeQuery = true)
         List<String> findTopHiringCompanyNames(@Param("limit") int limit);
+
+        // ==================== Academic Year Queries ====================
+
+        /**
+         * Find applications in a college within an academic year date range.
+         * Academic year is July 1 to June 30.
+         */
+        @Query("SELECT a FROM Application a " +
+                        "WHERE a.student.user.college.id = :collegeId " +
+                        "AND a.appliedAt >= :startDate AND a.appliedAt < :endDate")
+        List<Application> findByCollegeIdAndDateRange(
+                        @Param("collegeId") Long collegeId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        /**
+         * Find applications by department IDs within an academic year date range.
+         */
+        @Query("SELECT a FROM Application a " +
+                        "WHERE a.student.department.id IN :departmentIds " +
+                        "AND a.appliedAt >= :startDate AND a.appliedAt < :endDate")
+        List<Application> findByDepartmentIdsAndDateRange(
+                        @Param("departmentIds") java.util.Set<Long> departmentIds,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        // ==================== Institute-Level Queries ====================
+
+        /**
+         * Count students placed from departments under an institute within date range.
+         * Used for institute-level analytics.
+         */
+        @Query("SELECT COUNT(DISTINCT a.studentId) FROM Application a " +
+                        "WHERE a.status = 'SELECTED' " +
+                        "AND a.student.department.parent.id = :instituteId " +
+                        "AND a.appliedAt >= :startDate AND a.appliedAt < :endDate")
+        Long countPlacedByInstituteIdAndDateRange(
+                        @Param("instituteId") Long instituteId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        /**
+         * Find all applications from an institute's departments within date range.
+         */
+        @Query("SELECT a FROM Application a " +
+                        "WHERE a.student.department.parent.id = :instituteId " +
+                        "AND a.appliedAt >= :startDate AND a.appliedAt < :endDate")
+        List<Application> findByInstituteIdAndDateRange(
+                        @Param("instituteId") Long instituteId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        /**
+         * Calculate average package for selected students from an institute.
+         */
+        @Query("SELECT AVG(d.packageLpa) FROM Application a " +
+                        "JOIN PlacementDrive d ON a.driveId = d.id " +
+                        "WHERE a.status = 'SELECTED' " +
+                        "AND a.student.department.parent.id = :instituteId " +
+                        "AND d.packageLpa IS NOT NULL " +
+                        "AND a.appliedAt >= :startDate AND a.appliedAt < :endDate")
+        Double calculateAveragePackageByInstituteIdAndDateRange(
+                        @Param("instituteId") Long instituteId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
+
+        /**
+         * Find all applications from a single department within date range.
+         */
+        @Query("SELECT a FROM Application a " +
+                        "WHERE a.student.department.id = :departmentId " +
+                        "AND a.appliedAt >= :startDate AND a.appliedAt < :endDate")
+        List<Application> findByDepartmentIdAndDateRange(
+                        @Param("departmentId") Long departmentId,
+                        @Param("startDate") java.time.LocalDateTime startDate,
+                        @Param("endDate") java.time.LocalDateTime endDate);
 }

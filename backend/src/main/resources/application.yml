@@ -42,7 +42,7 @@ spring:
       mode: always
       separator: ";"
       schema-locations: classpath:schema.sql
-      data-locations: classpath:seed-data-v2.sql
+      data-locations: classpath:seed-data-v3-enhanced.sql
       continue-on-error: false
 
 # Server Configuration

@@ -25,4 +25,7 @@ public class OrganizationUnitDTO {
     private Integer placementCount;
     // For hierarchical structure
     private List<OrganizationUnitDTO> children;
+
+    // Staff details (Coordinators/TPOs)
+    private List<OrganizationStaffDTO> staff;
 }

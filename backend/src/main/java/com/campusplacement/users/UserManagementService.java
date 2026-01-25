@@ -87,7 +87,8 @@ public class UserManagementService {
                 college,
                 dto.getOrganizationUnitId(),
                 dto.getPhoneNumber(),
-                currentUser.getUsername());
+                currentUser.getUsername(),
+                null); // Student has no special designation
     }
 
     /**
@@ -187,7 +188,7 @@ public class UserManagementService {
     }
 
     /**
-     * Creates a new coordinator (TPO) user.
+     * Creates a new coordinator (TPO) or Admin (Director/HOD) based on designation.
      * MUST be called by ADMIN.
      */
     @Transactional
@@ -201,15 +202,23 @@ public class UserManagementService {
         // Coordinator belongs to admin's college
         College college = validateAndGetCollege(currentUser.getCollegeId());
 
+        // Determine role based on designation
+        UserRole targetRole = UserRole.COORDINATOR;
+        String designation = dto.getDesignation();
+        if (designation != null && (designation.contains("Director") || designation.contains("Head"))) {
+            targetRole = UserRole.ADMIN;
+        }
+
         return createUserInternal(
                 dto.getName(),
                 dto.getEmail(),
                 dto.getPassword(),
-                UserRole.COORDINATOR,
+                targetRole,
                 college,
-                null,
+                dto.getOrganizationUnitId(),
                 dto.getPhoneNumber(),
-                currentUser.getUsername());
+                currentUser.getUsername(),
+                dto.getDesignation());
     }
 
     /**
@@ -232,7 +241,8 @@ public class UserManagementService {
                 college,
                 null,
                 dto.getPhoneNumber(),
-                currentUser.getUsername());
+                currentUser.getUsername(),
+                null); // Admin has no special designation
     }
 
     /**
@@ -256,7 +266,8 @@ public class UserManagementService {
             College college,
             Long organizationUnitId,
             String phoneNumber,
-            String creator) {
+            String creator,
+            String designation) {
 
         String normalizedEmail = email.toLowerCase().trim();
 
@@ -267,11 +278,13 @@ public class UserManagementService {
         User user = User.builder()
                 .name(name.trim())
                 .email(normalizedEmail)
+                .username(normalizedEmail)
                 .passwordHash(passwordEncoder.encode(password))
                 .role(role)
                 .college(college)
                 .phoneNumber(phoneNumber)
                 .isActive(true)
+                .mustChangePassword(true) // Force password change on first login
                 .build();
 
         // Handle Organization Unit Assignment if provided
@@ -287,7 +300,7 @@ public class UserManagementService {
             UserAssignment assignment = UserAssignment.builder()
                     .user(user)
                     .organizationUnit(orgUnit)
-                    .designation(role.name()) // Use role name as default designation
+                    .designation(designation != null && !designation.isBlank() ? designation : role.name())
                     .scopeLevel(ScopeLevel.SELF) // Default scope
                     .isPrimary(true)
                     .build();

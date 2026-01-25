@@ -37,16 +37,54 @@ public class CompanyService {
 
     // ==================== Read Operations ====================
 
+    private final com.campusplacement.organizations.OrganizationScopeService scopeService;
+
+    // ==================== Read Operations ====================
+
     /**
-     * Retrieves all active companies with pagination.
-     *
+     * Retrieves companies with scope enforcement.
+     * 
      * @param pageable Pagination parameters
-     * @return Paginated list of companies
+     * @return Paginated list of visible companies
      */
+    @SuppressWarnings("null")
     @Transactional(readOnly = true)
     public PagedResponse<CompanyDTO> getAllCompanies(Pageable pageable) {
-        Page<Company> companies = companyRepository.findByIsActiveTrue(pageable);
+        // TODO: Implement Company Database fully with scoped access
+        // Current implementation is a draft for future enablement
+        // Resolve current user scope
+        Long userId = getCurrentUserId();
+        com.campusplacement.organizations.model.ScopeContext scope = scopeService.resolveScope(userId);
+
+        Page<Company> companies;
+
+        if (scope.isSuperAdmin()) {
+            // Super Admin sees all companies
+            companies = companyRepository.findByIsActiveTrue(pageable);
+        } else if (scope.hasFullCollegeAccess()) {
+            // College Admins see companies that have visited their college
+            companies = companyRepository.findByCollegeId(scope.collegeId(), pageable);
+        } else {
+            // Coordinators see companies that have visited their departments OR institutes
+            if (scope.allowedOrgUnitIds() == null || scope.allowedOrgUnitIds().isEmpty()) {
+                companies = Page.empty(pageable);
+            } else {
+                // Using the broader OrgUnitIds set to capture drives linked to Institute or
+                // Department
+                companies = companyRepository.findByOrganizationUnitIds(scope.allowedOrgUnitIds(), pageable);
+            }
+        }
+
         return PagedResponse.of(companies, companies.map(this::toDTO).getContent());
+    }
+
+    private Long getCurrentUserId() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof com.campusplacement.security.CustomUserDetails) {
+            return ((com.campusplacement.security.CustomUserDetails) auth.getPrincipal()).getId();
+        }
+        throw new org.springframework.security.access.AccessDeniedException("User not authenticated");
     }
 
     /**

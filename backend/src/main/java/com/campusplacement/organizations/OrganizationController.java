@@ -1,6 +1,5 @@
 package com.campusplacement.organizations;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -10,16 +9,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+
 import org.springframework.web.bind.annotation.RestController;
 
 import com.campusplacement.common.ApiResponse;
-import com.campusplacement.common.exception.ResourceNotFoundException;
-import com.campusplacement.organizations.dto.AcademicEventDTO;
+
 import com.campusplacement.organizations.dto.OrganizationUnitDTO;
-import com.campusplacement.organizations.model.AcademicEvent;
-import com.campusplacement.organizations.model.OrganizationUnit;
-import com.campusplacement.organizations.repository.AcademicEventRepository;
+
 import com.campusplacement.organizations.repository.OrganizationUnitRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -30,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 public class OrganizationController {
 
         private final OrganizationUnitRepository organizationUnitRepository;
-        private final AcademicEventRepository academicEventRepository;
+
         private final com.campusplacement.students.StudentRepository studentRepository;
         private final com.campusplacement.applications.ApplicationRepository applicationRepository;
         private final OrganizationScopeService scopeService;
@@ -108,71 +104,15 @@ public class OrganizationController {
                 return ResponseEntity.ok(ApiResponse.success(created, "Department created successfully"));
         }
 
-        @GetMapping("/events")
-        @PreAuthorize("hasAnyRole('ADMIN', 'COORDINATOR')")
-        public ResponseEntity<ApiResponse<List<AcademicEventDTO>>> getEvents() {
-                Long collegeId = scopeService.getCurrentUserScope().collegeId();
-                List<AcademicEventDTO> events = academicEventRepository.findByCollegeId(collegeId)
-                                .stream()
-                                .map(this::mapToEventDTO)
-                                .collect(Collectors.toList());
-                return ResponseEntity.ok(ApiResponse.success(events));
+        /**
+         * Delete an Organization Unit.
+         */
+        @org.springframework.web.bind.annotation.DeleteMapping("/units/{id}")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<ApiResponse<Void>> deleteOrganizationUnit(
+                        @org.springframework.web.bind.annotation.PathVariable Long id) {
+                organizationService.deleteOrganizationUnit(id);
+                return ResponseEntity.ok(ApiResponse.success(null, "Organization unit deleted successfully"));
         }
 
-        @PostMapping("/events")
-        @PreAuthorize("hasAnyRole('ADMIN', 'COORDINATOR')")
-        public ResponseEntity<ApiResponse<AcademicEventDTO>> createEvent(@RequestBody AcademicEventDTO dto) {
-                Long currentUserCollegeId = scopeService.getCurrentUserScope().collegeId();
-
-                // Basic permission check - ensure unit belongs to user's college
-                @SuppressWarnings("null")
-                OrganizationUnit unit = organizationUnitRepository.findById(dto.getOrganizationUnitId())
-                                .orElseThrow(() -> new ResourceNotFoundException("Organization Unit not found"));
-
-                // Validate unit.collegeId == currentUser.collegeId
-                if (unit.getCollege() == null || !unit.getCollege().getId().equals(currentUserCollegeId)) {
-                        throw new com.campusplacement.common.exception.UnauthorizedException(
-                                        "Cannot create event for organization unit outside your college");
-                }
-
-                AcademicEvent event = AcademicEvent.builder()
-                                .name(dto.getName())
-                                .eventType(dto.getEventType())
-                                .startDate(dto.getStartDate())
-                                .endDate(dto.getEndDate())
-                                .description(dto.getDescription())
-                                .organizationUnit(unit)
-                                .build();
-
-                @SuppressWarnings("null")
-                AcademicEvent saved = academicEventRepository.save(event);
-                return ResponseEntity.ok(ApiResponse.success(mapToEventDTO(saved)));
-        }
-
-        @GetMapping("/conflicts")
-        @PreAuthorize("hasAnyRole('ADMIN', 'COORDINATOR')")
-        public ResponseEntity<ApiResponse<List<AcademicEventDTO>>> checkConflicts(
-                        @RequestParam List<Long> departmentIds,
-                        @RequestParam LocalDate date) {
-
-                List<AcademicEventDTO> conflicts = academicEventRepository.findConflicts(departmentIds, date, date)
-                                .stream()
-                                .map(this::mapToEventDTO)
-                                .collect(Collectors.toList());
-
-                return ResponseEntity.ok(ApiResponse.success(conflicts));
-        }
-
-        private AcademicEventDTO mapToEventDTO(AcademicEvent event) {
-                return AcademicEventDTO.builder()
-                                .id(event.getId())
-                                .name(event.getName())
-                                .eventType(event.getEventType())
-                                .startDate(event.getStartDate())
-                                .endDate(event.getEndDate())
-                                .description(event.getDescription())
-                                .organizationUnitId(event.getOrganizationUnit().getId())
-                                .organizationUnitName(event.getOrganizationUnit().getName())
-                                .build();
-        }
 }

@@ -306,14 +306,26 @@ export const eligibilityApi = {
 // ==================== Analytics API ====================
 
 export const analyticsApi = {
-    getOverview: async () => {
-        return fetchApi('/analytics/overview');
+    getOverview: async (year = null) => {
+        const params = year ? `?year=${year}` : '';
+        return fetchApi(`/analytics/overview${params}`);
     },
 
-    getDepartmentStats: async () => {
-        return fetchApi('/analytics/departments');
+    getDepartmentStats: async (year = null) => {
+        const params = year ? `?year=${year}` : '';
+        return fetchApi(`/analytics/departments${params}`);
+    },
+
+    getInstituteStats: async (year = null) => {
+        const params = year ? `?year=${year}` : '';
+        return fetchApi(`/analytics/institutes${params}`);
+    },
+
+    getCurrentAcademicYear: async () => {
+        return fetchApi('/analytics/current-year');
     },
 };
+
 
 // ==================== Companies API ====================
 
@@ -348,9 +360,7 @@ export const organizationsApi = {
         return fetchApi('/organizations/departments');
     },
 
-    getEvents: async () => {
-        return fetchApi('/organizations/events');
-    },
+
 
     getInstitutes: async () => {
         return fetchApi('/organizations/institutes');
@@ -360,12 +370,7 @@ export const organizationsApi = {
         return fetchApi('/organizations/hierarchy');
     },
 
-    createEvent: async (data) => {
-        return fetchApi('/organizations/events', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    },
+
 
     createUnit: async (data) => {
         return fetchApi('/organizations/units', {
@@ -374,9 +379,10 @@ export const organizationsApi = {
         });
     },
 
-    checkConflicts: async (departmentIds, date) => {
-        const ids = departmentIds.join(',');
-        return fetchApi(`/organizations/conflicts?departmentIds=${ids}&date=${date}`);
+    deleteUnit: async (id) => {
+        return fetchApi(`/organizations/units/${id}`, {
+            method: 'DELETE',
+        });
     },
 };
 
@@ -401,6 +407,12 @@ export const usersApi = {
     },
 
     delete: async (id) => {
+        return fetchApi(`/users/${id}`, {
+            method: 'DELETE',
+        });
+    },
+    
+    deleteUser: async (id) => {
         return fetchApi(`/users/${id}`, {
             method: 'DELETE',
         });
@@ -506,6 +518,37 @@ export const collegesApi = {
     },
 };
 
+// ==================== Admin API ====================
+
+export const adminApi = {
+    createCoordinator: async (data) => {
+        return fetchApi('/admin/coordinators', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+};
+
+// ==================== Coordinator API ====================
+
+export const coordinatorApi = {
+    getEvents: async () => {
+        return fetchApi('/coordinator/events');
+    },
+
+    createEvent: async (data) => {
+        return fetchApi('/coordinator/events', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+
+    checkConflicts: async (departmentIds, date) => {
+        const ids = departmentIds.join(',');
+        return fetchApi(`/coordinator/conflicts?departmentIds=${ids}&date=${date}`);
+    },
+};
+
 const api = {
     auth: authApi,
     students: studentsApi,
@@ -519,6 +562,8 @@ const api = {
     profile: profileApi,
     notifications: notificationsApi,
     colleges: collegesApi,
+    admin: adminApi,
+    coordinator: coordinatorApi,
 };
 
 export default api;

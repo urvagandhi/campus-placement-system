@@ -74,7 +74,6 @@ public class CollegeService {
      * @param dto College creation details including admin info
      * @return Onboarding response with credentials
      */
-    @SuppressWarnings("null")
     @Transactional
     public CollegeOnboardingResponse createCollege(CreateCollegeDTO dto) {
         // 1. Validate college code is unique

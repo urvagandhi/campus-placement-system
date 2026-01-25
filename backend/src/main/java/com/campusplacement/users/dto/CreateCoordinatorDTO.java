@@ -37,4 +37,9 @@ public class CreateCoordinatorDTO {
     private String password;
 
     private String phoneNumber;
+
+    private Long organizationUnitId;
+
+    @Size(max = 100, message = "Designation must be less than 100 characters")
+    private String designation;
 }
